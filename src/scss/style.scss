@@ -1,0 +1,113 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  font-size: 14px;
+}
+
+.main-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+  padding: 24px;
+  overflow: hidden;
+}
+
+.header {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.breadcrumb {
+  color: #666;
+  font-size: 1rem;
+
+  a {
+    color: #666;
+    text-decoration: none;
+
+    &:hover {
+      color: #333;
+    }
+  }
+}
+
+.lesson-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.select select {
+  padding: 8px 24px 8px 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 1rem;
+  appearance: none; /* 移除默认箭头 */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: url("data:image/svg+xml;utf8,%3Csvg%20viewBox%3D%220%200%201024%201024%22%20width%3D%2214%22%20height%3D%2214%22%3E%3Cpath%20d%3D%22M558.3051283%20756.48113778c-13.66789689%2013.66789689-32.21579852%2026.36003555-49.78915555%2022.45457541-17.57214341%202.9284883-34.16852859-10.73940859-47.83521186-22.45457541L37.96870637%20331.81635319c-21.47760355-21.47638992-21.47760355-56.62189037%200-78.09949393s56.62189037-21.47638992%2078.0982803%200l393.42595793%20404.16415289%20394.40171615-404.16293926c21.47638992-21.47760355%2056.62189037-21.47760355%2078.09828028%200s21.47760355%2056.62189037%200%2078.0982803L558.3051283%20756.48113778z%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E") no-repeat right center;
+  background-size: 12px;
+  height: 32px;
+}
+
+// 高 32 的按钮
+.button  {
+  height: 32px;
+  padding: 0 16px;
+  line-height: 32px;
+  border-radius: 4px;
+  font-size: 1rem;
+  color: white;
+  border: none;
+  cursor: pointer;
+
+  &.is-blue {
+    background-color: #13d4ff;
+
+    &:hover {
+      background-color: #0cc0f2;
+    }
+  }
+
+  &.is-orange {
+    background-color: #ff9f00;
+
+    &:hover {
+      background-color: #e58f00;
+    }
+  }
+
+  &.is-large {
+    height: 40px;
+    line-height: 40px;
+    font-size: 1.2rem;
+  }
+}
+
+.buttons {
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+
+  .button {
+    & + button {
+      margin-left: 12px;
+    }
+  }
+}
+

@@ -1,0 +1,13 @@
+{
+    "editor.tabSize": 2,
+    "editor.quickSuggestionsDelay": 1,
+    "[vue]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "prettier.printWidth": 140,
+    "prettier.singleQuote": true,
+    "javascript.suggest.autoImports": false,
+    "emmet.showSuggestionsAsSnippets": true,
+    "editor.snippetSuggestions": "top"
+  }
+  
