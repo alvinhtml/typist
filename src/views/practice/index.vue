@@ -1,5 +1,6 @@
 <template>
-  <div class="practice-menu-container">
+  <Header></Header>
+  <div class="main-container practice-menu">
     <div class="menu">
       <router-link to="/practice/level1" class="menu-item">
         一级简码
@@ -11,26 +12,30 @@
         三级简码
       </router-link>
       <router-link to="/practice/level4" class="menu-item">
-        四级简码
+        全码练习
       </router-link>
       <router-link to="/practice/level5" class="menu-item">
         词组练习
+      </router-link>
+      <router-link to="/practice/words" class="menu-item">
+        生词练习
       </router-link>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import Header from '@/components/Header.vue';
+
 // 组件逻辑
 </script>
 
 <style scoped>
-.practice-menu-container {
-  height: 100vh;
+.practice-menu {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f5f7fa;
+  z-index: 1;
 }
 
 .menu {

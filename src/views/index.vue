@@ -1,9 +1,6 @@
 <template>
-  <div class="index-container">
-    <div class="app-header">
-      
-    </div>
-    
+  <Header></Header>
+  <div class="main-container index-container">
     <div class="menu">
       <router-link to="/practice" class="menu-item">
         <div class="menu-item-content">
@@ -41,31 +38,11 @@
 </template>
 
 <script setup lang="ts">
+import Header from '@/components/Header.vue';
 // 组件逻辑
 </script>
 
 <style scoped>
-.index-container {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-}
-
-.app-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #fff;
-  margin: 0;
-}
-
 .menu-icon {
   font-size: 1.25rem;
   color: #2c3e50;

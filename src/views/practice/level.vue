@@ -1,51 +1,18 @@
 <template>
-  <div class="main-container">
-    <div class="header">
-      <div class="breadcrumb">
-        <RouterLink :to="{ name: 'Index' }">
-          首页
-        </RouterLink>
-        <span> &gt;</span>
-        <RouterLink :to="{ name: 'PracticeMenu' }">
-          课程练习
-        </RouterLink>
-        <span> &gt;</span>
-        <span> {{ lessons[lesson as keyof typeof lessons] }} </span>
-      </div>
-
-      <div class="lesson-selector">
-        选择课程
-        <div class="select">
-          <select v-model="lesson">
-          <option v-for="(v, k) in lessons" :value="k">{{ v }}</option>
-        </select>
-        </div>
-        <div class="select">
-          <select v-model="duration">
-          <option v-for="v in durations" :value="v">{{ v / 60 }}分钟</option>
-        </select>
-        </div>
-        <button v-if="started" class="button is-orange" @click="handleStop">结束练习</button>
-        <button v-else class="button is-blue" @click="handleStart">开始练习</button>
-      </div>
+  <Header>
+    <div class="text">课程</div>
+    <div class="select">
+      <select v-model="lesson">
+        <option v-for="(v, k) in lessons" :value="k">{{ v }}</option>
+      </select>
     </div>
-
-    <div class="input-infos"><span>当前输入</span><b>{{ inputLetters.join('').toLocaleUpperCase() }}</b></div>
-    <div class="practice-area">
-      <div class="report" v-if="report && !started">
-        <div class="title">结束！</div>
-        <div><span>时间</span><b>{{ formatTime(report.time) }}</b></div>
-        <div><span>字数</span><b>{{ report.count }}</b></div>
-        <div><span>速度</span><b>{{ Math.floor(report.speed) }} 个/分钟</b></div>
-        <div><span>正确率</span><b>{{ report.accuracy.toFixed(2) }}%</b></div>
-      </div>
-      <div class="words" :class="`is-${lesson}`" v-else>
-        <template v-for="(word, index) in currentWords" :key="index">
-          <span :class="[ results[(page - 1) * limit + index] ? 'correct' : (results[index] === 0 ? 'incorrect' : '')]">{{ word.word }}</span>
-        </template>
-      </div>
+    <div class="text">时长</div>
+    <div class="select">
+      <select v-model="duration">
+        <option v-for="v in durations" :value="v">{{ v / 60 }}分钟</option>
+      </select>
     </div>
-    <div class="stats-bar" v-if="report">
+    <div class="infos" v-if="report">
       <div class="stat-item">
         时间 {{ formatTime(report.time) }}
       </div>
@@ -59,6 +26,28 @@
         正确率 {{ report.accuracy.toFixed(2) }}%
       </div>
     </div>
+    <template #right>
+      <div class="text input-infos">
+        <b>{{ inputs }}</b> 
+      </div>
+    </template>
+  </Header>
+  <div class="main-container">
+    <div class="practice-area">
+      <div class="report" v-if="report && !started">
+        <div class="title">结束</div>
+        <div><span>时间</span><b>{{ formatTime(report.time) }}</b></div>
+        <div><span>字数</span><b>{{ report.count }}</b></div>
+        <div><span>速度</span><b>{{ Math.floor(report.speed) }} 个/分钟</b></div>
+        <div><span>正确率</span><b>{{ report.accuracy.toFixed(2) }}%</b></div>
+      </div>
+      <div class="words" :class="`is-${lesson}`" v-else>
+        <template v-for="(word, index) in currentWords" :key="index">
+          <span :class="[ results[(page - 1) * limit + index] ? 'correct' : (results[index] === 0 ? 'incorrect' : '')]">{{ word.word }}</span>
+        </template>
+      </div>
+    </div>
+    
   </div>
 </template>
 
@@ -68,6 +57,7 @@ import { useCommonStore } from '@/stores/common'
 import { RouterLink, useRoute } from 'vue-router'
 import type { Word } from '@/stores/common'
 import { Practice, Report, PracticeProps, formatTime } from '@/utils/practice'
+import Header from '@/components/Header.vue';
 
 const commonStore = useCommonStore()
 const route = useRoute()
@@ -81,10 +71,10 @@ const durations = [60, 120, 180, 240, 300]
 const duration = ref(60)
 
 const report = ref<Report | null>(null)
-const inputLetters = ref<string[]>([])
+const inputs = ref<string>('')
 const currentWords = ref<Word[]>([])
 const results = ref<number[]>([])
-const limit = ref(100)
+const limit = ref(80)
 const page = ref(1)
 const started = ref(false)
 const time = ref(0)
@@ -94,10 +84,9 @@ const practice = new Practice(lessonData.value, {
 })
 
 practice.addEventListener('change', (event: PracticeProps) => {
-  console.log(event)
   started.value = event.started
   time.value = event.time
-  inputLetters.value = event.inputLetters
+  inputs.value = event.inputLetters.join('').toLocaleUpperCase()
   currentWords.value = event.currentWords
   results.value = event.results
   page.value = event.page
@@ -118,6 +107,7 @@ watch(lesson, async (newLesson) => {
   practice.stop()
   try {
     await commonStore.readData(newLesson)
+    handleStart()
   } catch (error) {
     console.error('Failed to load lesson:', error)
   }
@@ -125,11 +115,13 @@ watch(lesson, async (newLesson) => {
 
 watch(duration, () => {
   practice.stop()
+  handleStart()
 })
 
 onMounted(async () => {
   try {
     await commonStore.readData(lesson.value)
+    handleStart()
   } catch (error) {
     console.error('Failed to load lesson:', error)
   }
@@ -142,24 +134,10 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .input-infos {
-  display: flex;
-  justify-content: flex-end;
-  align-items:flex-end;
-  padding: 8px;
-  height: 22px;
-
-  span {
-    font-size: 14px;
-    padding-right: 8px;
-  }
-
-  b {
-    font-size: 20px;
-    width: 80px;
-    text-align: left;
-    border-bottom: 1px solid #ccc;
-    padding: 0 4px;
-  }
+  width: 60px;
+  padding-left: 4px;
+  letter-spacing: 2px;
+  text-align: right;
 }
 
 
@@ -170,18 +148,18 @@ onUnmounted(() => {
   gap: 2rem;
   align-items: center;
   justify-content: center;
-  background-color: #f5f7fa;
   border-radius: 12px;
   padding: 2rem;
   margin-bottom: 2rem;
 
   .report {
     font-size: 20px;
+    color: #ffffff;
 
     .title {
       font-size: 32px;
       margin-bottom: 1rem;
-      color: #4CAF50;
+      color: #00ff1e;
       text-align: center;
     }
 
@@ -194,50 +172,37 @@ onUnmounted(() => {
   }
 
   .words {
-    font-size: 28px;
-    
-    &.is-level5 {
-      font-size: 24px;
-
-      span {
-        padding: 0 12px;
-      }
-    }
+    font-size: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    color: #ffffff;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 
     span {
+      flex: 0 0 60px;
       white-space: nowrap;
+      text-align: center;
 
       &.correct {
-        color: #4CAF50;
+        color: #00ff1e;
       }
 
       &.incorrect {
-        color: #F44336;
+        color: #ff0000;
       }
     }
   }
 }
 
-.text-display {
-  font-size: 2rem;
-  color: #333;
-  transition: color 0.3s ease;
-}
-
-.text-display.text-correct {
-  color: #4CAF50;
-}
-
-.stats-bar {
+.infos {
   display: flex;
-  justify-content: space-between;
-  padding: 1rem 2rem;
-  background-color: #f5f7fa;
-  border-radius: 8px;
+  justify-content: flex-start;
 }
 
 .stat-item {
-  color: #666;
-  font-size: 0.9rem;
+  color: #ffffff;
+  font-size: 12px;
+  margin-left: 24px;
 }
 </style>

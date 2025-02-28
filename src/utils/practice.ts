@@ -135,6 +135,7 @@ export class Practice {
     }
   
     this.inputLetters.push(event.key.toLowerCase())
+    console.log(this.inputLetters);
     this.dispatchEvent('change', this.getProperties())
   
     if (this.inputLetters.length === 4) {

@@ -1,4 +1,5 @@
 <template>
+  <Header></Header>
   <div class="main-container">
     <div class="header">
       <div class="breadcrumb">

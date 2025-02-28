@@ -1,23 +1,5 @@
 <template>
   <div class="app-container">
-    <div class="titlebar">
-      <!-- <div class="titlebar-drag" v-if="false">Typist</div>
-      <div class="window-controls" v-if="false">
-        <button class="control-button minimize" @click="minimizeWindow">
-          <i class="fas fa-minus"></i>
-        </button>
-        <button class="control-button maximize" @click="maximizeWindow">
-          <i class="fas fa-expand"></i>
-        </button>
-        <button class="control-button close" @click="closeWindow">
-          <i class="fas fa-times"></i>
-        </button>
-      </div> -->
-      <div class="titlebar-drag"></div>
-      <div class="menu-icon">
-        <i class="fas fa-cog"></i>
-      </div>
-    </div>
     <router-view></router-view>
   </div>
 </template>
@@ -37,12 +19,29 @@ const closeWindow = () => {
 </script>
 
 <style lang="scss">
+// rgba(90, 143, 249, 1)
+// rgba(63, 213, 252, 1)
 
 .app-container {
+  position: relative;
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: radial-gradient(100% 80% at 70% 43%, rgba(138, 5, 147, 0.8) 0%, rgba(138, 5, 147, 0) 100%), linear-gradient(239deg, #340263 2%, #15003D 100%);
+  background-color: rgba(90, 143, 249, 0.8);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: -10%;
+    width: 120%;
+    height: 120%;
+    background-image: radial-gradient(88% 88% at 0% 18%, rgba(63, 213, 252, 0.6) 0%, rgba(63, 213, 252, 0) 100%);
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    animation: gradient 6s ease infinite;
+    filter: blur(20px);
+  }
 }
 
 .titlebar {
@@ -131,6 +130,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
 }
+
+@keyframes gradient {
+  0% {
+    top: -20%;
+    left: -10%;
+  }
+  50% {
+    top: -5%;
+    left: -5%;
+  }
+  100% {
+    top: -20%;
+    left: -10%;
+  }
+}
+
+
 
 /* Font Awesome */
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');

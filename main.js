@@ -73,7 +73,7 @@ function createTrayWindow() {
   if (process.env.VITE_DEV_SERVER_URL) {
     trayWindow.loadURL(process.env.VITE_DEV_SERVER_URL + '/tray.html')
     // 开发模式下打开开发者工具
-    trayWindow.webContents.openDevTools({ mode: 'detach' })
+    // trayWindow.webContents.openDevTools({ mode: 'detach' })
   } else {
     trayWindow.loadFile(path.join(__dirname, 'dist', 'tray.html'))
   }
@@ -142,8 +142,9 @@ function createTray() {
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1024,
-    height: 650,
+    height: 680,
     frame: false,
+    transparent: true,
     backgroundColor: '#00000000',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -174,7 +175,7 @@ function createWindow() {
 // 当 Electron 完成初始化时创建窗口
 app.whenReady().then(() => {
   createWindow()
-  createTray()
+  // createTray()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
