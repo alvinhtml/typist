@@ -42,70 +42,67 @@ export interface PracticeConfig {
   limit: number
 }
 
-type PropertiesOnly<T> = {
-  [K in keyof T as T[K] extends Function ? never : K]: T[K]
-}
+// type PropertiesOnly<T> = {
+//   [K in keyof T as T[K] extends Function ? never : K]: T[K]
+// }
 
 type PickProperties<T, K extends keyof T> = {
   [P in K]: T[P];
 };
 
-export type PracticeProps = PickProperties<Practice, 'time' | 'inputLetters' | 'currentWords' | 'results' | 'page' | 'report' | 'started'>
+export type PracticeProps = PickProperties<Practice, 'time' | 'inputs' | 'words' | 'results' | 'page' | 'report' | 'started'>
 
-type EventName = 'correct' | 'incorrect' | 'change'
+type EventName = 'correct' | 'incorrect' | 'message'
 
 interface Event {
   event: EventName
   callback: (data: PracticeProps) => void
 }
 
-const defaultConfig: PracticeConfig = {
-  limit: 100
-}
-
 export class Practice {
   started: boolean
   report: Report | null
   wordsGenerator: Generator<Word[], void, unknown>
-  currentWords: Word[]
-  currentIndex: number
-  inputLetters: string[]
+  words: Word[]
+  index: number
+  inputs: string[]
   results: number[]
   time: number
   duration: number
   page: number
   timer: number | null
-  config: PracticeConfig
   events: Event[]
+  limit: number
   boundInput: (event: KeyboardEvent) => void
 
-  constructor(data: Word[], config: PracticeConfig = defaultConfig) {
-    this.config = { ...defaultConfig, ...config }
+  constructor() {
 
     this.started = false
     this.report = null
-    this.currentWords = []
-    this.currentIndex = 0
-    this.inputLetters = []
+    this.words = []
+    this.index = 0
+    this.inputs = []
     this.results = []
     this.time = 0
     this.page = 1
     this.duration = 60
     this.timer = null
+    this.limit = 80
     this.events = []
-    this.wordsGenerator = generateWords(data, this.config.limit)
-    this.boundInput = this.input.bind(this);
+    this.wordsGenerator = generateWords([], this.limit)
+    this.boundInput = this.input.bind(this)
   }
 
-  update(data: Word[]) {
-    this.wordsGenerator = generateWords(data, this.config.limit)
+  load(data: Word[]) {
+    this.wordsGenerator = generateWords(data, this.limit)
   }
 
-  private getProperties(): PracticeProps {
+  private message(): PracticeProps {
+    this.updateReport()
     return {
       time: this.time,
-      inputLetters: this.inputLetters,
-      currentWords: this.currentWords,
+      inputs: this.inputs,
+      words: this.words,
       results: this.results,
       page: this.page,
       report: this.report,
@@ -114,69 +111,65 @@ export class Practice {
   }
 
   private input (event: KeyboardEvent)  {
-    const currentWord = this.currentWords[this.currentIndex]
+    const currentWord = this.words[this.index]
     
     if (event.key === 'Backspace') {
-      if (this.inputLetters.length > 0) {
-        this.inputLetters.pop()
-      } else if (this.results.length > 0 && this.currentIndex > 0) {
+      if (this.inputs.length > 0) {
+        this.inputs.pop()
+      } else if (this.results.length > 0 && this.index > 0) {
         this.results.pop()
-        this.currentIndex--
+        this.index--
       }
-      this.dispatchEvent('change', this.getProperties())
+      this.dispatchEvent('message', this.message())
       return
     }
     
     if (!/^[a-zA-Z]$/.test(event.key)) {
-      if (event.key === ' ' && this.inputLetters.length > 0) {
+      if (event.key === ' ' && this.inputs.length > 0) {
         this.checkResult()
       }
       return
     }
   
-    this.inputLetters.push(event.key.toLowerCase())
-    console.log(this.inputLetters);
-    this.dispatchEvent('change', this.getProperties())
+    this.inputs.push(event.key.toLowerCase())
   
-    if (this.inputLetters.length === 4) {
+    if (this.inputs.length === 4) {
       this.checkResult()
+    } else {
+      this.dispatchEvent('message', this.message())
     }
   }
 
   checkResult() {
-    const currentWord = this.currentWords[this.currentIndex]
-    const input = this.inputLetters.join('')
+    const currentWord = this.words[this.index]
+    const input = this.inputs.join('')
     
     if (input.toLocaleLowerCase() === currentWord.code.toLocaleLowerCase()) {
       this.results.push(1)
       Promise.resolve().then(() => {
-        this.dispatchEvent('correct', this.getProperties())
+        this.dispatchEvent('correct', this.message())
       })
     } else {
       this.results.push(0)
       Promise.resolve().then(() => {
-        this.dispatchEvent('incorrect', this.getProperties())
+        this.dispatchEvent('incorrect', this.message())
       })
     }
     
-    this.currentIndex++
-    this.inputLetters = []
-    this.dispatchEvent('change', this.getProperties())
+    this.index++
+    this.inputs = []
+    this.dispatchEvent('message', this.message())
 
-    console.log(this.currentIndex);
-    
-    if (this.currentIndex >= this.config.limit) {
-        console.log(this.currentIndex, this.config.limit - 1)
+    if (this.index >= this.limit) {
+        console.log(this.index, this.limit - 1)
         const nextWords = this.wordsGenerator.next().value
 
         if (nextWords) {
           this.page++
-          this.currentWords = nextWords
-          this.currentIndex = 0
+          this.words = nextWords
+          this.index = 0
         }
     }
-
-    this.updateReport()
   }
 
   start(duration: number = 60) {
@@ -184,14 +177,13 @@ export class Practice {
     this.started = true
     
     const firstWords = this.wordsGenerator.next().value
-    console.log(firstWords);
     
     if (firstWords) {
-      this.currentWords = firstWords
-      this.currentIndex = 0
+      this.words = firstWords
+      this.index = 0
 
       this.results = []
-      this.inputLetters = []
+      this.inputs = []
       this.started = true
       this.report = null
       this.page = 1
@@ -205,32 +197,30 @@ export class Practice {
 
       this.timer = window.setInterval(() => {
         this.time++
-        this.updateReport()
-        this.dispatchEvent('change', this.getProperties())
+        this.dispatchEvent('message', this.message())
         if (this.time >= this.duration) {
           this.stop()
         }
       }, 1000)
 
-      this.dispatchEvent('change', this.getProperties())
+      this.dispatchEvent('message', this.message())
     }
   }
 
   stop() {
     this.started = false
-    this.updateReport()
 
     if (this.timer) clearInterval(this.timer)
     this.timer = null
     window.removeEventListener('keydown', this.boundInput)
     this.time = 0
-    this.inputLetters = []
+    this.inputs = []
     this.results = []
-    this.currentWords = []
-    this.currentIndex = 0
+    this.words = []
+    this.index = 0
     this.page = 1
     
-    this.dispatchEvent('change', this.getProperties())
+    this.dispatchEvent('message', this.message())
   }
 
   updateReport() {
@@ -248,6 +238,10 @@ export class Practice {
 
   removeEventListener(event: EventName, callback: (data: PracticeProps) => void) {
     this.events = this.events.filter(e => e.event !== event || e.callback !== callback)
+  }
+
+  requestAnimationFrame(callback: (status: PracticeProps) => void) {
+    this.addEventListener('message', callback)
   }
 
   dispatchEvent(event: EventName, data: PracticeProps) {

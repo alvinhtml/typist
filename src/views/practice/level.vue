@@ -52,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, onUnmounted } from 'vue'
+import { ref, onMounted, watch, computed, onUnmounted, shallowRef } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import { RouterLink, useRoute } from 'vue-router'
 import type { Word } from '@/stores/common'
@@ -61,11 +61,16 @@ import Header from '@/components/Header.vue';
 
 const commonStore = useCommonStore()
 const route = useRoute()
+const { readData } = window.electronAPI
 
 const lessons = commonStore.lessons
-const lessonData = computed<Word[]>(() => commonStore.lessonData)
 
 const lesson = ref<keyof typeof lessons>(route.params.level as keyof typeof lessons)
+const lessonData = shallowRef<Word[]>([])
+
+const reload = async () => {
+  lessonData.value = await readData(lesson.value)
+}
 
 const durations = [60, 120, 180, 240, 300]
 const duration = ref(60)
@@ -79,22 +84,20 @@ const page = ref(1)
 const started = ref(false)
 const time = ref(0)
 
-const practice = new Practice(lessonData.value, { 
-  limit: 100
+const practice = new Practice()
+
+practice.requestAnimationFrame((status) => {
+  started.value = status.started
+  inputs.value = status.inputs.join('').toLocaleUpperCase()
+  currentWords.value = status.words
+  results.value = status.results
+  page.value = status.page
+  report.value = status.report
 })
 
-practice.addEventListener('change', (event: PracticeProps) => {
-  started.value = event.started
-  time.value = event.time
-  inputs.value = event.inputLetters.join('').toLocaleUpperCase()
-  currentWords.value = event.currentWords
-  results.value = event.results
-  page.value = event.page
-  report.value = event.report
-})
 
 const handleStart = () => {
-  practice.update(lessonData.value)
+  practice.load(lessonData.value)
   practice.start(duration.value)
 }
 
@@ -106,7 +109,7 @@ const handleStop = () => {
 watch(lesson, async (newLesson) => {
   practice.stop()
   try {
-    await commonStore.readData(newLesson)
+    await reload()
     handleStart()
   } catch (error) {
     console.error('Failed to load lesson:', error)
@@ -120,7 +123,7 @@ watch(duration, () => {
 
 onMounted(async () => {
   try {
-    await commonStore.readData(lesson.value)
+    await reload()
     handleStart()
   } catch (error) {
     console.error('Failed to load lesson:', error)

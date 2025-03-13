@@ -23,10 +23,10 @@
         </div>
       </router-link>
       
-      <router-link to="/import" class="menu-item">
+      <router-link to="/words" class="menu-item">
         <div class="menu-item-content">
-          <i class="fas fa-file-import"></i>
-          <span>生词导入</span>
+          <i class="fas fa-file"></i>
+          <span>生词本</span>
         </div>
       </router-link>
     </div>

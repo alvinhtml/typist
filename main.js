@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Tray, nativeImage, screen } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, Tray, nativeImage, screen } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const csv = require('csv-parser')
@@ -7,28 +7,31 @@ let mainWindow = null
 let tray = null
 let trayWindow = null
 
-// 添加 IPC 处理器来读取 CSV 文件
-ipcMain.handle('read-data', async (event, lesson) => {
-  
-
+// 读取 CSV 文件
+async function readData(lesson) {
   const fileName = `${lesson}.csv`
   
   if (!fileName) {
     throw new Error(`Invalid lesson: ${lesson}`)
   }
 
-  return new Promise((resolve, reject) => {
-    const results = []
-    fs.createReadStream(path.join(__dirname, 'data', fileName))
-      .pipe(csv())
-      .on('data', (data) => results.push(data))
-      .on('end', () => resolve(results))
-      .on('error', (error) => reject(error))
-  })
-})
+  try {
+    return new Promise((resolve, reject) => {
+      const results = []
+      fs.createReadStream(path.join(__dirname, 'data', fileName))
+        .pipe(csv())
+        .on('data', (data) => results.push(data))
+        .on('end', () => resolve(results))
+        .on('error', (error) => reject(error))
+    })
+  } catch (error) {
+    console.error('Error reading lesson data:', error)
+    throw error
+  }
+}
 
-// 处理导入词汇
-ipcMain.handle('import-words', async (event, words) => {
+// 导入到生词本
+async function importWords(words) {
   try {
     return new Promise((resolve, reject) => {
       const filePath = path.join(__dirname, 'data', 'words.csv')
@@ -47,8 +50,57 @@ ipcMain.handle('import-words', async (event, words) => {
     })
   } catch (error) {
     console.error('Error importing words:', error)
+    throw error
   }
+}
+
+async function exportWords() {
+  try {
+    // 默认下载路径
+    const defaultPath = `${process.env.HOME}/Downloads/words.csv`;
+    
+    // 用 Electron 的对话框让用户选择一个目录
+    const { filePath } = await dialog.showSaveDialog({
+      title: '导出生词本',
+      defaultPath,
+      filters: [
+        { name: 'CSV Files', extensions: ['csv'] }
+      ]
+    });
+  
+    // 如果用户取消对话框，filePath 将为 undefined
+    if (!filePath) {
+      return
+    }
+  
+    // 准备 CSV 内容
+    const csvContent = fs.readFileSync(path.join(__dirname, 'data', 'words.csv'), 'utf8')
+
+    // 写入文件
+    fs.writeFileSync(filePath, csvContent)
+
+  } catch (error) {
+    console.error('Export error:', error)
+    throw error
+  }
+}
+
+
+// 添加 IPC 处理器来读取 CSV 文件
+ipcMain.handle('read-data', async (event, lesson) => {
+  return readData(lesson)
 })
+
+// 处理导入词汇
+ipcMain.handle('import-words', async (event, words) => {
+  return importWords(words)
+})
+
+// 处理导出词汇
+ipcMain.handle('export-words', async (event) => {
+  return exportWords() 
+})
+
 
 // 创建托盘窗口
 function createTrayWindow() {

@@ -1,15 +1,8 @@
 <template>
-  <Header></Header>
+  <Header>
+    <div class="text">导入生词</div>
+  </Header>
   <div class="main-container">
-    <div class="header">
-      <div class="breadcrumb">
-        <RouterLink :to="{ name: 'Index' }">
-          首页
-        </RouterLink>
-        <span> &gt;</span>
-        <span> 导入生词 </span>
-      </div>
-    </div>
     <ImportWord v-slot="{ handleImport, result, handleReset }" class="import-area">
       <button v-if="result" class="button is-orange" @click="() => handleReset()">继续导入</button>
       <button v-else class="button is-blue" @click="() => handleImport()">导入生词</button>
@@ -17,8 +10,12 @@
   </div>
 </template>
 
-<script setup>
-import ImportWord from '@/components/ImportWord.vue';
+<script lang="ts" setup>
+import { computed, onMounted, shallowRef, ref } from 'vue'
+import type { Word } from '@/stores/common'
+
+import Header from '@/components/Header.vue'
+import ImportWord from '@/components/ImportWord.vue'
 </script>
 
 <style lang="scss">

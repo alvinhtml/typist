@@ -27,6 +27,7 @@ import { segmentText } from '@/utils/trie'
 import type { Word, ImportResult } from '@/stores/common'
 
 const commonStore = useCommonStore()
+const { readData, importWords, exportWords } = window.electronAPI
 
 const text = ref('')
 const result = ref<ImportResult | null>()
@@ -61,7 +62,37 @@ async function handleImport() {
       return
     }
 
-    result.value = await commonStore.importWords(newWords)
+    // 先读取现有的单词
+    const existingWords = await readData('words')
+      
+    // 创建一个Set来存储现有的单词
+    const existingWordSet = new Set(existingWords.map(w => w.word))
+    
+    // 过滤出不存在的新词
+    const wordsToAdd = newWords.filter(word => 
+      word.code && !existingWordSet.has(word.word)
+    )
+    
+    // 过滤出已存在的词
+    const wordsToDuplicate = newWords.filter(word => 
+      word.code && existingWordSet.has(word.word)
+    )
+    
+    if (wordsToAdd.length === 0) {
+      return {
+        count: wordsToAdd.length,
+        newWords: wordsToAdd,
+        duplicateWords: wordsToDuplicate
+      }
+    }
+
+    await importWords(newWords)
+
+    result.value = {
+      count: wordsToAdd.length,
+      newWords: wordsToAdd,
+      duplicateWords: wordsToDuplicate
+    }
   } catch (error) {
     console.error('Import error:', error)
   }

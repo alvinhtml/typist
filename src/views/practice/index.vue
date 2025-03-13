@@ -2,32 +2,23 @@
   <Header></Header>
   <div class="main-container practice-menu">
     <div class="menu">
-      <router-link to="/practice/level1" class="menu-item">
-        一级简码
-      </router-link>
-      <router-link to="/practice/level2" class="menu-item">
-        二级简码
-      </router-link>
-      <router-link to="/practice/level3" class="menu-item">
-        三级简码
-      </router-link>
-      <router-link to="/practice/level4" class="menu-item">
-        全码练习
-      </router-link>
-      <router-link to="/practice/level5" class="menu-item">
-        词组练习
-      </router-link>
-      <router-link to="/practice/words" class="menu-item">
-        生词练习
-      </router-link>
+      <template v-for="(lesson, key) in lessons" :key="lesson">
+        <router-link :to="`/practice/${key}`" class="menu-item">
+          {{ lesson }}
+        </router-link>
+      </template>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useCommonStore } from '@/stores/common'
 import Header from '@/components/Header.vue';
 
-// 组件逻辑
+const commonStore = useCommonStore()
+
+const lessons = computed(() => commonStore.lessons)
 </script>
 
 <style scoped>

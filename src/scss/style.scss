@@ -48,6 +48,9 @@ html, body {
 
 // 高 32 的按钮
 .button  {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   height: 32px;
   padding: 0 16px;
   line-height: 32px;
@@ -56,6 +59,7 @@ html, body {
   color: white;
   border: none;
   cursor: pointer;
+  text-decoration: none;
 
   &.is-blue {
     background-color: #13d4ff;
@@ -72,11 +76,26 @@ html, body {
       background-color: #e58f00;
     }
   }
+ 
+  &.is-danger {
+    background-color: #e62864;
+
+    &:hover {
+      background-color: #d11551;
+    }
+  }
 
   &.is-large {
     height: 40px;
     line-height: 40px;
     font-size: 1.2rem;
+  }
+
+  &.is-small {
+    height: 24px;
+    line-height: 24px;
+    font-size: 0.8rem;
+    padding: 0 12px;
   }
 }
 
