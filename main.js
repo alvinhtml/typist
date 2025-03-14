@@ -22,7 +22,13 @@ function initLogger() {
     level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
     format: winston.format.combine(
       winston.format.timestamp(),
-      winston.format.json()
+      winston.format.printf(({ timestamp, level, message, ...meta }) => {
+        // 添加进程信息到日志
+        const processInfo = meta.processType || 'main'
+        delete meta.processType
+        const metaStr = Object.keys(meta).length ? JSON.stringify(meta) : ''
+        return `${timestamp} [${processInfo}] ${level}: ${message} ${metaStr}`
+      })
     ),
     transports: [
       // 文件日志
@@ -49,6 +55,23 @@ function initLogger() {
     arch: process.arch,
     nodeVersion: process.version,
     electronVersion: process.versions.electron
+  })
+
+  // 处理来自渲染进程的日志
+  ipcMain.on('log-message', (event, { level, message, meta = {} }) => {
+    // 添加发送方窗口信息
+    const sender = event.sender
+    const window = BrowserWindow.fromWebContents(sender)
+    const windowType = window === mainWindow ? 'main-window' : 
+                      window === trayWindow ? 'tray-window' : 'unknown-window'
+
+    // 添加进程信息
+    meta.processType = `renderer:${windowType}`
+    
+    // 记录日志
+    if (logger[level]) {
+      logger[level](message, meta)
+    }
   })
 }
 
