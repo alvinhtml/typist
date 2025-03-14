@@ -1,6 +1,6 @@
 <template>
   <div class="header">
-    <div class="btn" @click="handleBack">
+    <div class="btn" @click="handleBack" v-if="route.path !== '/'">
       <svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M659.748571 245.272381l-51.687619-51.687619-318.439619 318.585905 318.415238 318.268952 51.712-51.736381-266.703238-266.556952z"></path></svg>
     </div>
     <div class="header-center">

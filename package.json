@@ -1,14 +1,16 @@
 {
   "name": "typist",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "A typing practice software built with Electron and Vue",
   "main": "main.js",
   "scripts": {
     "dev": "node scripts/dev-server.js",
-    "build": "vue-tsc && vite build",
+    "build": "vue-tsc && vite build && electron-builder",
     "preview": "vite preview",
     "electron:build": "vue-tsc && vite build && electron-builder",
-    "type-check": "vue-tsc --noEmit"
+    "type-check": "vue-tsc --noEmit",
+    "pack-mac": "vue-tsc && vite build && electron-builder --mac",
+    "pack-win": "vue-tsc && vite build && electron-builder --win"
   },
   "build": {
     "appId": "com.typist.app",
@@ -18,7 +20,18 @@
     },
     "files": [
       "dist/**/*",
-      "main.js"
+      "main.js",
+      "preload.js",
+      "data/**/*",
+      "icon.ico",
+      "icon.png",
+      "icon-template.png"
+    ],
+    "extraResources": [
+      {
+        "from": "data",
+        "to": "data"
+      }
     ],
     "publish": [
       {
@@ -33,13 +46,13 @@
         "dmg",
         "zip"
       ],
-      "icon": "build/icon.icns"
+      "icon": "icon.icns"
     },
     "win": {
       "target": [
         "nsis"
       ],
-      "icon": "build/icon.ico"
+      "icon": "icon.ico"
     },
     "linux": {
       "target": [
@@ -75,7 +88,7 @@
     "vite": "^4.3.9",
     "vue-tsc": "^1.4.8"
   },
-  "author": "Your Name",
+  "author": "Alvin",
   "license": "MIT",
   "repository": {
     "type": "git",

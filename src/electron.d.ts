@@ -8,6 +8,8 @@ export interface ElectronAPI {
     code: string;
   }>) => Promise<any>;
   exportWords: () => Promise<void>;
+  openMainWindow: () => Promise<void>;
+  quitApp: () => Promise<void>;
   minimizeWindow: () => void;
   maximizeWindow: () => void;
   closeWindow: () => void;

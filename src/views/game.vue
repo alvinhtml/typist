@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed, onUnmounted } from 'vue'
+import { ref, onMounted, watch, shallowRef, computed, onUnmounted } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import { RouterLink, useRoute } from 'vue-router'
 import type { Word } from '@/stores/common'
@@ -60,10 +60,16 @@ import Header from '@/components/Header.vue';
 const commonStore = useCommonStore()
 const route = useRoute()
 
-const lessons = commonStore.lessons
-const lessonData = computed<Word[]>(() => commonStore.lessonData)
+const { readData } = window.electronAPI
 
-const lesson = ref<keyof typeof lessons>('level1')
+const lessons = commonStore.lessons
+
+const lesson = ref<keyof typeof lessons>('words')
+const lessonData = shallowRef<Word[]>([])
+
+const reload = async () => {
+  lessonData.value = await readData(lesson.value)
+}
 
 const durations = [60, 120, 180, 240, 300]
 const duration = ref(60)
@@ -102,7 +108,7 @@ const handleStop = () => {
 watch(lesson, async (newLesson) => {
   practice.stop()
   try {
-    await commonStore.readData(newLesson)
+    await reload()
     handleStart()
   } catch (error) {
     console.error('Failed to load lesson:', error)
@@ -116,7 +122,7 @@ watch(duration, () => {
 
 onMounted(async () => {
   try {
-    await commonStore.readData(lesson.value)
+    await reload()
     handleStart()
   } catch (error) {
     console.error('Failed to load lesson:', error)

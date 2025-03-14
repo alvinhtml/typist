@@ -2,30 +2,130 @@ const { app, BrowserWindow, ipcMain, dialog, Tray, nativeImage, screen } = requi
 const path = require('path')
 const fs = require('fs')
 const csv = require('csv-parser')
+const winston = require('winston')
+const os = require('os')
 
 let mainWindow = null
 let tray = null
 let trayWindow = null
+let logger = null
+
+// 初始化日志系统
+function initLogger() {
+  // macOS 标准日志目录: ~/Library/Logs/<应用名称>/
+  const logPath = path.join(os.homedir(), 'Library/Logs', app.getName())
+  if (!fs.existsSync(logPath)) {
+    fs.mkdirSync(logPath, { recursive: true })
+  }
+
+  logger = winston.createLogger({
+    level: process.env.NODE_ENV === 'development' ? 'debug' : 'info',
+    format: winston.format.combine(
+      winston.format.timestamp(),
+      winston.format.json()
+    ),
+    transports: [
+      // 文件日志
+      new winston.transports.File({
+        filename: path.join(logPath, 'typist.log'),
+        maxsize: 5242880, // 5MB
+        maxFiles: 5,
+        tailable: true
+      }),
+      // 控制台输出
+      new winston.transports.Console({
+        format: winston.format.combine(
+          winston.format.colorize(),
+          winston.format.simple()
+        )
+      })
+    ]
+  })
+
+  // 记录应用基本信息
+  logger.info('Application initialized', {
+    version: app.getVersion(),
+    platform: process.platform,
+    arch: process.arch,
+    nodeVersion: process.version,
+    electronVersion: process.versions.electron
+  })
+}
+
+// 确保用户数据目录存在
+function ensureUserDataDirectory() {
+  const userDataPath = path.join(app.getPath('userData'), 'data')
+  if (!fs.existsSync(userDataPath)) {
+    fs.mkdirSync(userDataPath, { recursive: true })
+  }
+  
+  // 检查并复制初始数据文件
+  const wordsPath = path.join(userDataPath, 'words.csv')
+  if (!fs.existsSync(wordsPath)) {
+    // 如果是打包后的应用
+    if (app.isPackaged) {
+      const sourceWordsPath = path.join(process.resourcesPath, 'data', 'words.csv')
+      if (fs.existsSync(sourceWordsPath)) {
+        fs.copyFileSync(sourceWordsPath, wordsPath)
+      } else {
+        // 创建空的words.csv文件
+        fs.writeFileSync(wordsPath, 'word,code\n')
+      }
+    } else {
+      // 开发环境
+      const sourceWordsPath = path.join(__dirname, 'data', 'words.csv')
+      if (fs.existsSync(sourceWordsPath)) {
+        fs.copyFileSync(sourceWordsPath, wordsPath)
+      } else {
+        // 创建空的words.csv文件
+        fs.writeFileSync(wordsPath, 'word,code\n')
+      }
+    }
+  }
+}
+
+// 获取数据文件路径
+function getDataPath(fileName) {
+  // 如果是课程数据，从资源目录读取
+  if (fileName !== 'words.csv') {
+    const filePath = app.isPackaged
+      ? path.join(process.resourcesPath, 'data', fileName)
+      : path.join(__dirname, 'data', fileName)
+    logger.debug(`Getting data path for ${fileName}: ${filePath}`)
+    return filePath
+  }
+  // 如果是生词本，从用户数据目录读取
+  const userDataPath = path.join(app.getPath('userData'), 'data', fileName)
+  logger.debug(`Getting user data path for ${fileName}: ${userDataPath}`)
+  return userDataPath
+}
 
 // 读取 CSV 文件
 async function readData(lesson) {
   const fileName = `${lesson}.csv`
   
   if (!fileName) {
+    logger.error(`Invalid lesson: ${lesson}`)
     throw new Error(`Invalid lesson: ${lesson}`)
   }
 
   try {
     return new Promise((resolve, reject) => {
       const results = []
-      fs.createReadStream(path.join(__dirname, 'data', fileName))
+      fs.createReadStream(getDataPath(fileName))
         .pipe(csv())
         .on('data', (data) => results.push(data))
-        .on('end', () => resolve(results))
-        .on('error', (error) => reject(error))
+        .on('end', () => {
+          logger.info(`Successfully read data from ${fileName}`)
+          resolve(results)
+        })
+        .on('error', (error) => {
+          logger.error(`Error reading ${fileName}:`, error)
+          reject(error)
+        })
     })
   } catch (error) {
-    console.error('Error reading lesson data:', error)
+    logger.error('Error reading lesson data:', error)
     throw error
   }
 }
@@ -34,7 +134,8 @@ async function readData(lesson) {
 async function importWords(words) {
   try {
     return new Promise((resolve, reject) => {
-      const filePath = path.join(__dirname, 'data', 'words.csv')
+      const filePath = getDataPath('words.csv')
+      logger.info(`Importing ${words.length} words to ${filePath}`)
       
       // 将单词转换为CSV行
       const csvLines = words.map(word => `${word.word},${word.code}`).join('\n')
@@ -42,14 +143,16 @@ async function importWords(words) {
       // 追加到文件末尾
       fs.appendFile(filePath, '\n' + csvLines, (err) => {
         if (err) {
+          logger.error('Error importing words:', err)
           reject(err)
           return
         }
+        logger.info('Successfully imported words')
         resolve()
       })
     })
   } catch (error) {
-    console.error('Error importing words:', error)
+    logger.error('Error importing words:', error)
     throw error
   }
 }
@@ -74,17 +177,16 @@ async function exportWords() {
     }
   
     // 准备 CSV 内容
-    const csvContent = fs.readFileSync(path.join(__dirname, 'data', 'words.csv'), 'utf8')
+    const csvContent = fs.readFileSync(getDataPath('words.csv'), 'utf8')
 
     // 写入文件
     fs.writeFileSync(filePath, csvContent)
 
   } catch (error) {
-    console.error('Export error:', error)
+    logger.error('Export error:', error)
     throw error
   }
 }
-
 
 // 添加 IPC 处理器来读取 CSV 文件
 ipcMain.handle('read-data', async (event, lesson) => {
@@ -101,12 +203,11 @@ ipcMain.handle('export-words', async (event) => {
   return exportWords() 
 })
 
-
 // 创建托盘窗口
 function createTrayWindow() {
   trayWindow = new BrowserWindow({
     width: 320,
-    height: 260,
+    height: 300,
     show: false,
     frame: false,
     backgroundColor: '#00000000',
@@ -132,11 +233,11 @@ function createTrayWindow() {
 
   // 添加调试事件监听
   trayWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
-    console.error('Tray window failed to load:', errorCode, errorDescription)
+    logger.error('Tray window failed to load:', errorCode, errorDescription)
   })
 
   trayWindow.webContents.on('did-finish-load', () => {
-    console.log('Tray window loaded successfully')
+    logger.info('Tray window loaded successfully')
     // 开发模式下打开开发者工具
     if (process.env.VITE_DEV_SERVER_URL) {
       trayWindow.webContents.openDevTools({ mode: 'detach' })
@@ -192,12 +293,12 @@ function createTray() {
 
 // 创建主窗口
 function createWindow() {
+  const iconPath = process.platform === 'win32' ? 'icon.ico' : 'icon.png';
+  const icon = nativeImage.createFromPath(path.join(__dirname, iconPath));
   mainWindow = new BrowserWindow({
     width: 1024,
     height: 680,
-    frame: false,
-    transparent: true,
-    backgroundColor: '#00000000',
+    icon,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -216,22 +317,26 @@ function createWindow() {
     mainWindow.loadFile(path.join(__dirname, 'dist/index.html'))
   }
 
-  // 主窗口失去焦点时自动最小化
-  mainWindow.on('blur', () => {
-    if (!mainWindow.isDestroyed()) {
-      mainWindow.minimize()
-    }
+  // 处理窗口关闭事件
+  mainWindow.on('close', (event) => {
+    event.preventDefault()
+    mainWindow.hide()
   })
 }
 
 // 当 Electron 完成初始化时创建窗口
 app.whenReady().then(() => {
+  initLogger()
+  logger.info('Application starting...')
+  ensureUserDataDirectory()
+  createTray()
   createWindow()
-  // createTray()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow()
+    } else if (mainWindow) {
+      mainWindow.show()
     }
   })
 })
@@ -245,9 +350,27 @@ app.on('window-all-closed', () => {
 
 // 退出时清理托盘图标
 app.on('before-quit', () => {
+  if (mainWindow) {
+    mainWindow.removeAllListeners('close')
+    mainWindow = null
+  }
   if (tray) {
     tray.destroy()
   }
+})
+
+// 打开主窗口
+ipcMain.handle('open-main-window', () => {
+  if (mainWindow === null) {
+    createWindow()
+  } else {
+    mainWindow.show()
+  }
+})
+
+// 退出应用
+ipcMain.handle('quit-app', () => {
+  app.quit()
 })
 
 // 窗口控制
@@ -255,7 +378,6 @@ ipcMain.on('window-minimize', () => {
   mainWindow.minimize()
 })
 
-// 最大化/恢复窗口
 ipcMain.on('window-maximize', () => {
   if (mainWindow.isMaximized()) {
     mainWindow.unmaximize()
@@ -264,9 +386,10 @@ ipcMain.on('window-maximize', () => {
   }
 })
 
-// 关闭窗口
 ipcMain.on('window-close', () => {
-  mainWindow.close()
+  if (mainWindow) {
+    mainWindow.hide()
+  }
 })
 
 // 隐藏托盘窗口

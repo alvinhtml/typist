@@ -111,7 +111,6 @@ onBeforeMount(() => {
 <style lang="scss" scoped>
 .import-container {
   box-sizing: border-box;
-  padding: 12px 0;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -179,7 +178,8 @@ onBeforeMount(() => {
 .button-wrapper {
   flex: 0 0 auto;
   padding: 12px 0 0 0;
-  text-align: center;
+  display: flex;
+  justify-content: center;
 
   button + button {
     margin-left: 12px;
