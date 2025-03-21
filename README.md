@@ -41,19 +41,7 @@ npm run electron:build
 - electron-builder (打包)
 - electron-updater (自动更新)
 
-## 许可证
-
-MIT
-
-1. 根据要求使用 electron 开发一个打字练习软件
-
-- 使用 electron + vue + typescript 搭建客户端
-- 需要支持 Windows, Linux, Mac
-- 需要支持自动更新
-
-你先记住这些要求，稍后一步一步帮我创建打字练习软件
-
-2. 项目结构
+## 项目结构
 
 ```
 ├── README.md
