@@ -15,3 +15,9 @@
 - onChanged：返回清理函数，事件为 revision、requestId、affectedCourses、addedPairs、removedPairs、codeReplacements、removedCourseWords。revision 不连续时重取快照。窗口销毁解绑，禁止中间变更通知。
 
 主窗口负责当前会话；托盘窗口仅调用相同主进程服务。词库变更先取消失效当前题再调整显示，统计不回退；游戏同步有效目标集合。暂停/离页/最小化使 generation 失效；恢复必须手动。输入策略的 50 ms 暂存为已实测实验方案，正式实现不得隐藏其快速暂停可能取消刚提交文字的边界风险。
+
+## 阶段 1 已实现范围
+
+固定 bridge：getSnapshot、getResources（五类资源存在性/大小）、updateSettings、openMain、openText、quit、onChanged 与 onPause。updateSettings 的类型签名及请求结构以 src/shared/contracts.ts 为准，使用 requestId/expectedRevision/value；其余业务接口尚未开放。onChanged 仅提交后广播，订阅返回解绑函数。渲染窗口仅能通过指定入口访问，未知窗口及子 frame 请求拒绝。
+
+当前没有可开始的业务局；公共 Session 已可独立使用，onPause 供后续连接。阶段 3/4 接入 Session 后必须补充退出确认、取消后保持现场和候选窗口过滤，不能直接把原始 blur 通知当成已经验证的输入策略。
