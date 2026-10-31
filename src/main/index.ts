@@ -3,7 +3,8 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { readFileSync } from 'node:fs';
 import { Store, StoreError, failure } from './storage';
-import type { Changed } from '../shared/contracts';
+import { readBuiltin } from './dictionary';
+import type { Changed, VocabularyChange, Result } from '../shared/contracts';
 let store:Store|undefined, startupError:unknown;
 let main:BrowserWindow|null=null, text:BrowserWindow|null=null, tray:Tray|null=null, quitting=false;
 const page=join(__dirname,'../renderer/index.html');
@@ -26,8 +27,15 @@ function windowFor(kind:'main'|'text') {
 }
 function quit(){quitting=true;app.quit();}
 function register() {
+  function business(request:any,run:()=>{result:Result<VocabularyChange>;committed:boolean}){
+    const {result,committed}=run();if(committed&&result.ok){const event:Changed={revision:result.revision,requestId:request.requestId,affectedCourses:result.value.affectedCourses,addedPairs:result.value.addedPairs,removedPairs:result.value.removedPairs,codeReplacements:result.value.codeReplacements,removedCourseWords:result.value.removedCourseWords};for(const win of BrowserWindow.getAllWindows())win.webContents.send('changed',event);}return result;
+  }
   const handlers:Record<string,(arg:any)=>unknown>={
     snapshot:()=>{if(!store)throw startupError;return store.snapshot();},
+    course:request=>{if(!store)throw startupError;return store.getCourse(request);},
+    supplemental:request=>{if(!store)throw startupError;return business(request,()=>store!.mutateSupplemental(request));},
+    'add-text':request=>{if(!store)throw startupError;return business(request,()=>store!.addVocabularyText(request));},
+    'delete-vocabulary':request=>{if(!store)throw startupError;return business(request,()=>store!.deleteVocabulary(request));},
     resources:()=>({ok:true,revision:store?.revision??0,value:[1,2,3,4,5].map(level=>({level,bytes:readFileSync(join(app.isPackaged?process.resourcesPath:app.getAppPath(),'data',`level${level}.csv`)).length}))}),
     settings:request=>{if(!store)throw startupError;const {result,committed}=store.updateSettings(request);if(committed&&result.ok){const event:Changed={revision:result.revision,requestId:request.requestId,affectedCourses:[],addedPairs:[],removedPairs:[],codeReplacements:[],removedCourseWords:[]};for(const win of BrowserWindow.getAllWindows())win.webContents.send('changed',event);}return result;},
     'open-main':()=>{windowFor('main');return {ok:true,value:null,revision:store?.revision??0};},
@@ -41,7 +49,7 @@ function register() {
 if(!app.requestSingleInstanceLock()){app.quit();}else {
   app.on('second-instance',()=>{if(app.isReady())windowFor('main');});
   app.whenReady().then(()=>{
-    try {store=new Store(join(app.getPath('userData'),'typist.sqlite'));}catch(e){startupError=e;}
+    try {store=new Store(join(app.getPath('userData'),'typist.sqlite'),readBuiltin(join(app.isPackaged?process.resourcesPath:app.getAppPath(),'data')));}catch(e){startupError=e;}
     const { session } = require('electron') as typeof import('electron');
     session.defaultSession.setPermissionRequestHandler((_webContents,_permission,callback)=>callback(false));
     session.defaultSession.setPermissionCheckHandler(()=>false);

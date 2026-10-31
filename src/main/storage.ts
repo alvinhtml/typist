@@ -1,3 +1,5 @@
+import { Dictionary, courses, pairKey } from './dictionary';
+import type { Entry, Pair, Course, SupplementalOperation, SupplementalChange, TextAddition, VocabularyChange, VocabularySelection, CodeReplacement } from '../shared/contracts';
 import { DatabaseSync } from 'node:sqlite';
 import { existsSync, copyFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -22,7 +24,9 @@ export function validateSettings(value:unknown):asserts value is Settings {
 }
 export class Store {
   private db:DatabaseSync;
-  constructor(file:string) {
+  private index:Dictionary;
+  constructor(file:string, private builtin:Entry[] = []) {
+    this.index=new Dictionary(builtin,[]);
     mkdirSync(dirname(file),{recursive:true}); const existing = existsSync(file);
     this.db = new DatabaseSync(file);
     try {
@@ -39,6 +43,7 @@ export class Store {
       if(meta?.schemaVersion!==1) throw new StoreError('MIGRATION','数据库版本信息不一致，停止写入。');
       if(this.db.prepare('PRAGMA quick_check').get()?.quick_check!=='ok') throw new StoreError('MIGRATION','数据库完整性检查失败，原数据已保留。');
       this.db.exec('PRAGMA foreign_keys=ON; PRAGMA busy_timeout=3000;');
+      this.index=this.makeIndex();
     } catch(e) {this.db.close();throw e;}
   }
   close(){this.db.close();}
@@ -47,6 +52,95 @@ export class Store {
     const settings=this.db.prepare('SELECT groupSize,threshold,duration,difficulty FROM settings WHERE id=1').get() as Settings;
     const rows=this.db.prepare('SELECT * FROM course_progress').all();
     return {ok:true,revision:this.revision,value:{settings,supplemental:this.db.prepare('SELECT * FROM supplemental').all() as Snapshot['supplemental'],vocabulary:this.db.prepare('SELECT * FROM vocabulary').all() as Snapshot['vocabulary'],learning:this.db.prepare('SELECT * FROM learning').all() as Learning[],courseProgress:rows.map(r=>({...r,orderedGroupWords:JSON.parse(String(r.orderedGroupWords))})) as Progress[]}};
+  }
+  private snapshotValue():Snapshot {const s=this.snapshot();if(!s.ok)throw new Error('无法读取快照');return s.value;}
+  private makeIndex(){const s=this.snapshotValue();return new Dictionary(this.builtin,s.supplemental,s.vocabulary);}
+  getCourse(request:{course:Course;offset:number;limit:number}) {
+    if(!request||!courses.includes(request.course)||!Number.isSafeInteger(request.offset)||request.offset<0||!Number.isSafeInteger(request.limit)||request.limit<1||request.limit>200)throw new StoreError('VALIDATION','无效课程或分页范围。');
+    return {ok:true as const,revision:this.revision,value:this.index.page(request.course,request.offset,request.limit)};
+  }
+  private write<T>(kind:string,request:Write<unknown>,action:()=>T):{result:Result<T>;committed:boolean}{
+    if(!request||typeof request.requestId!=='string'||!/^[a-zA-Z0-9-]{1,100}$/.test(request.requestId)||!Number.isSafeInteger(request.expectedRevision)||request.expectedRevision<0)throw new StoreError('VALIDATION','无效的写入请求。');
+    const hash=createHash('sha256').update(JSON.stringify([kind,request.expectedRevision,request.value])).digest('hex');
+    this.db.exec('BEGIN IMMEDIATE');
+    try{
+      const prior=this.db.prepare('SELECT * FROM applied_request WHERE requestId=?').get(request.requestId);
+      if(prior){if(prior.payloadHash!==hash)throw new StoreError('VALIDATION','相同请求编号不能用于不同内容。');this.db.exec('ROLLBACK');return {result:JSON.parse(String(prior.result)),committed:false};}
+      if(request.expectedRevision!==this.revision)throw new StoreError('CONFLICT',`数据已更新（当前版本 ${this.revision}），请重新加载后重试。`);
+      const value=action();const next=this.makeIndex();
+      this.db.exec('UPDATE metadata SET revision=revision+1 WHERE id=1');
+      const result:Result<T>={ok:true,value,revision:this.revision};
+      this.db.prepare('INSERT INTO applied_request VALUES(?,?,?,?)').run(request.requestId,hash,JSON.stringify(result),result.revision);
+      this.db.exec('COMMIT');this.index=next;return {result,committed:true};
+    }catch(e){this.db.exec('ROLLBACK');throw e;}
+  }
+  private pair(value:unknown):asserts value is Pair {
+    const p=value as Pair;if(!p||typeof p.word!=='string'||!p.word||p.word.length>200||typeof p.code!=='string'||!p.code||p.code.length>100)throw new StoreError('VALIDATION','无效文字或编码。');
+  }
+  private entry(value:unknown):Entry {
+    this.pair(value);const e=value as Entry,code=e.code.trim().toLowerCase(),length=Array.from(e.word).length;
+    if(!Number.isInteger(e.level)||e.level<1||e.level>5||/[\s\p{P}]/u.test(e.word)||!/^[a-z]{1,4}$/.test(code)||(e.level<5?(length!==1||code.length!==e.level):length<2))throw new StoreError('VALIDATION','文字不能含空白或标点；一级至四级需单字及对应长度字母编码，词组需至少两字和1～4位字母编码。');
+    return {word:e.word,code,level:e.level};
+  }
+  private reconcile(before:Snapshot,replacements:CodeReplacement[]):VocabularyChange {
+    // Evaluate the complete final dictionary, never intermediate remove/add states.
+    let after=this.snapshotValue();const sources=new Dictionary(this.builtin,after.supplemental);
+    for(const p of after.vocabulary)if(!sources.pairs.has(pairKey(p)))this.db.prepare('DELETE FROM vocabulary WHERE word=? AND code=?').run(p.word,p.code);
+    after=this.snapshotValue();const final=new Dictionary(this.builtin,after.supplemental,after.vocabulary);
+    const previous=new Dictionary(this.builtin,before.supplemental,before.vocabulary);
+    const removedCourseWords:VocabularyChange['removedCourseWords']=[],affectedCourses:Course[]=[];
+    for(const course of courses){
+      const oldWords=previous.byCourse.get(course)!,newWords=final.byCourse.get(course)!;
+      if(JSON.stringify([...oldWords].map(([w,c])=>[w,[...c]]))!==JSON.stringify([...newWords].map(([w,c])=>[w,[...c]])))affectedCourses.push(course);
+      const stale=new Set<string>();
+      for(const word of oldWords.keys())if(!newWords.has(word)){stale.add(word);removedCourseWords.push({course,word});}
+      for(const l of before.learning)if(l.course===course&&!newWords.has(l.word))stale.add(l.word);
+      for(const word of stale)this.db.prepare('DELETE FROM learning WHERE course=? AND word=?').run(course,word);
+      for(const p of before.courseProgress)if(p.course===course){const words=p.orderedGroupWords.filter(w=>newWords.has(w));if(words.length!==p.orderedGroupWords.length)this.db.prepare('UPDATE course_progress SET orderedGroupWords=? WHERE course=?').run(JSON.stringify(words),course);}
+    }
+    const oldPairs=new Set(before.vocabulary.map(pairKey)),newPairs=new Set(after.vocabulary.map(pairKey));
+    const finalReplacements:CodeReplacement[]=[];
+    for(const p of before.vocabulary){let code=p.code;for(const r of replacements)if(r.word===p.word&&r.oldCode===code)code=r.newCode;if(code!==p.code&&newPairs.has(pairKey({word:p.word,code})))finalReplacements.push({word:p.word,oldCode:p.code,newCode:code});}
+    return {addedPairs:after.vocabulary.filter(p=>!oldPairs.has(pairKey(p))),removedPairs:before.vocabulary.filter(p=>!newPairs.has(pairKey(p))),codeReplacements:finalReplacements,removedCourseWords,affectedCourses};
+  }
+  addVocabularyText(request:Write<string>){
+    if(!request||typeof request.value!=='string'||!request.value.trim()||request.value.length>100000)throw new StoreError('VALIDATION','请输入文本，单次最多100000个字符。');
+    return this.write<TextAddition>('text',request,()=>{
+      const before=this.snapshotValue(),match=this.index.match(request.value);let duplicateOccurrences=0;
+      const insert=this.db.prepare('INSERT OR IGNORE INTO vocabulary VALUES(?,?)');
+      for(const p of match.pairs)if(!insert.run(p.word,p.code).changes)duplicateOccurrences++;
+      return {...this.reconcile(before,[]),duplicateOccurrences,unknownDistinct:match.unknownDistinct};
+    });
+  }
+  deleteVocabulary(request:Write<VocabularySelection>){
+    const v=request?.value;if(!v||!Array.isArray(v.pairs)||!Array.isArray(v.words)||v.pairs.length+v.words.length<1||v.pairs.length+v.words.length>1000)throw new StoreError('VALIDATION','请选择1～1000个删除项。');
+    for(const p of v.pairs)this.pair(p);for(const w of v.words)if(typeof w!=='string'||!w||w.length>200)throw new StoreError('VALIDATION','无效文字。');
+    return this.write<VocabularyChange>('delete-vocabulary',request,()=>{const before=this.snapshotValue();for(const p of v.pairs)this.db.prepare('DELETE FROM vocabulary WHERE word=? AND code=?').run(p.word,p.code);for(const w of v.words)this.db.prepare('DELETE FROM vocabulary WHERE word=?').run(w);return this.reconcile(before,[]);});
+  }
+  mutateSupplemental(request:Write<SupplementalOperation[]>){
+    if(!request||!Array.isArray(request.value)||!request.value.length||request.value.length>1000)throw new StoreError('VALIDATION','单次需1～1000项变更。');
+    for(const op of request.value){if(!op||!['add','update','delete'].includes(op.kind))throw new StoreError('VALIDATION','无效词库操作。');if(op.kind==='delete')this.pair(op.pair);else{this.entry(op.entry);if(op.kind==='update'){this.pair(op.oldPair);if(op.oldPair.word!==op.entry.word)throw new StoreError('VALIDATION','修改仅支持编码和分类。');}}}
+    return this.write<SupplementalChange>('supplemental',request,()=>{
+      const before=this.snapshotValue(),codeReplacements:CodeReplacement[]=[];let merged=0;
+      const builtinKeys=new Set(this.builtin.map(pairKey));
+      for(const op of request.value){
+        if(op.kind==='delete'){this.db.prepare('DELETE FROM supplemental WHERE word=? AND code=?').run(op.pair.word,op.pair.code);continue;}
+        const entry=this.entry(op.entry);
+        if(op.kind==='update'){
+          const old=op.oldPair;if(!this.db.prepare('SELECT 1 FROM supplemental WHERE word=? AND code=?').get(old.word,old.code))throw new StoreError('VALIDATION','待修改的补充词条不存在，请重新加载。');
+          this.db.prepare('DELETE FROM supplemental WHERE word=? AND code=?').run(old.word,old.code);
+          if(old.code!==entry.code&&this.db.prepare('SELECT 1 FROM vocabulary WHERE word=? AND code=?').get(old.word,old.code)){
+            this.db.prepare('DELETE FROM vocabulary WHERE word=? AND code=?').run(old.word,old.code);
+            this.db.prepare('INSERT OR IGNORE INTO vocabulary VALUES(?,?)').run(entry.word,entry.code);
+            codeReplacements.push({word:old.word,oldCode:old.code,newCode:entry.code});
+          }
+        }
+        if(builtinKeys.has(pairKey(entry))||this.db.prepare('SELECT 1 FROM supplemental WHERE word=? AND code=?').get(entry.word,entry.code))merged++;else this.db.prepare('INSERT INTO supplemental VALUES(?,?,?)').run(entry.word,entry.code,entry.level);
+      }
+      const change=this.reconcile(before,codeReplacements),after=this.snapshotValue();
+      const equal=(a:Entry,b:Entry)=>pairKey(a)===pairKey(b)&&a.level===b.level;
+      return {...change,merged,addedEntries:after.supplemental.filter(a=>!before.supplemental.some(b=>equal(a,b))),removedEntries:before.supplemental.filter(a=>!after.supplemental.some(b=>equal(a,b)))};
+    });
   }
   updateSettings(request:Write<Settings>):{result:Result<Settings>; committed:boolean} {
     if(!request||typeof request.requestId!=='string'||!/^[a-zA-Z0-9-]{1,100}$/.test(request.requestId)||!Number.isSafeInteger(request.expectedRevision)||request.expectedRevision<0) throw new StoreError('VALIDATION','无效的写入请求。');

@@ -21,3 +21,9 @@
 固定 bridge：getSnapshot、getResources（五类资源存在性/大小）、updateSettings、openMain、openText、quit、onChanged 与 onPause。updateSettings 的类型签名及请求结构以 src/shared/contracts.ts 为准，使用 requestId/expectedRevision/value；其余业务接口尚未开放。onChanged 仅提交后广播，订阅返回解绑函数。渲染窗口仅能通过指定入口访问，未知窗口及子 frame 请求拒绝。
 
 当前没有可开始的业务局；公共 Session 已可独立使用，onPause 供后续连接。阶段 3/4 接入 Session 后必须补充退出确认、取消后保持现场和候选窗口过滤，不能直接把原始 blur 通知当成已经验证的输入策略。
+
+## 阶段 2 已实现范围
+
+新增固定 bridge 方法 getCourse({course,offset,limit})、mutateSupplemental(Write<SupplementalOperation[]>)、addVocabularyText(Write<string>)、deleteVocabulary(Write<{pairs,words}>)。现有 Write 包装不变，业务类型以 src/shared/contracts.ts 为准。getCourse 按文字聚合返回 total/items，每页 1～200；文本最多100000字符，补充和删除单次最多1000项。整字删除由主进程在当前事务展开。补充修改仅支持编码与分类，编码去首尾空白转小写；内置原码保持不变。
+
+返回新增/删除的生词组合、改码替换、退出课程的文字及受影响课程；补充操作另返回 addedEntries/removedEntries/merged。onChanged 的 addedPairs/removedPairs 为生词组合，补充变更由 affectedCourses 和新快照读取；仅在提交后广播，幂等重放不再次广播。窗口收到通知重取完整快照，不依赖连续事件累积本地数据。练习/游戏接入时还须使用这些最终变更取消失效题和更新提示。

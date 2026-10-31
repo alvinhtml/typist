@@ -28,3 +28,7 @@
 根目录正式工程采用 Electron 44.2.0、Vue 3.5.44、TypeScript 5.9.3、Vite 7.3.7、Forge 8.0.1（精确版本及传递依赖见 lockfile）。主进程使用 node:sqlite，初始化 v1 STRICT 数据表；设置事务已接入，业务关联修改仍留后续阶段。sandbox/contextIsolation 开启，禁止新窗口、导航和权限请求；固定 preload 接口验证窗口与主 frame 来源。正式工程与阶段 0 原型独立。
 
 公共 Session 为内存类，提供 idle/countdown/running/paused/ended、单调计时、设置快照和输入 generation；尚无活动业务会话，退出确认及候选窗失焦过滤须在阶段 3/4 接入。检查结果与发行限制以 [阶段 1 报告](../validation/phase1-report.md) 为准；以上旧待验证记录属于阶段 0 历史。
+
+## 阶段 2 实现（2026-10-31）
+
+正式词库服务位于 src/main/dictionary.ts，主进程启动加载五类资源，保留组合多分类来源、全编码及 Trie 最长匹配。Store 协调完整补充/生词事务、最终课程清理和提交后索引交换。固定 IPC 接入主窗口及文本窗口，管理列表按文字/编码搜索、每页100项。未改变 Electron 基线或数据库版本；相关验证与限制见 [阶段 2 报告](../validation/phase2-report.md)。
