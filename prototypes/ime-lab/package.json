@@ -6,7 +6,9 @@
   "scripts": {
     "build": "vue-tsc --noEmit && vite build",
     "start": "npm run build && electron .",
-    "smoke": "npm run build && electron tests/smoke.cjs"
+    "smoke": "npm run build && electron tests/smoke.cjs",
+    "phase0": "npm run build && electron tests/phase0.cjs",
+    "layouts": "npm run build && electron . --layouts"
   },
   "dependencies": {
     "vue": "3.5.44"

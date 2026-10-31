@@ -1,0 +1,30 @@
+{
+  "files": [
+    {
+      "file": "data/level1.csv",
+      "rows": 25,
+      "maxWordLength": 1
+    },
+    {
+      "file": "data/level2.csv",
+      "rows": 616,
+      "maxWordLength": 1
+    },
+    {
+      "file": "data/level3.csv",
+      "rows": 5557,
+      "maxWordLength": 1
+    },
+    {
+      "file": "data/level4.csv",
+      "rows": 26627,
+      "maxWordLength": 1
+    },
+    {
+      "file": "data/level5.csv",
+      "rows": 61200,
+      "maxWordLength": 9
+    }
+  ],
+  "crossFilePairs": []
+}
