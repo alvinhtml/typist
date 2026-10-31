@@ -5,7 +5,6 @@ export class Session {
   phase:Phase = 'idle'; generation = 0; remainingMs = 0; countdownMs = 3000;
   settingsSnapshot:Readonly<Settings> | null = null;
   private last = 0;
-  private resumePhase:'countdown'|'running' = 'running';
   constructor(private clock:()=>number = ()=>performance.now()) {}
   start(settings:Settings) {
     if (this.active) throw new Error('请先结束当前一局');
@@ -21,7 +20,7 @@ export class Session {
     }
     if(this.phase === 'running') { this.remainingMs = Math.max(0,this.remainingMs-delta); if(!this.remainingMs) this.end(); }
   }
-  pause() { this.tick(); if(this.phase==='running'||this.phase==='countdown') {this.resumePhase=this.phase; this.phase='paused'; this.generation++;} }
-  resume() {if(this.phase==='paused') {this.phase=this.resumePhase; this.last=this.clock(); this.generation++;} }
+  pause() { this.tick(); if(this.phase==='running'||this.phase==='countdown') {this.phase='paused'; this.generation++;} }
+  resume() {if(this.phase==='paused') {this.phase='running'; this.countdownMs=0; this.last=this.clock(); this.generation++;} }
   end() {this.phase='ended'; this.generation++;}
 }

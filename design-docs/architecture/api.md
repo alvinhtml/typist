@@ -27,3 +27,17 @@
 新增固定 bridge 方法 getCourse({course,offset,limit})、mutateSupplemental(Write<SupplementalOperation[]>)、addVocabularyText(Write<string>)、deleteVocabulary(Write<{pairs,words}>)。现有 Write 包装不变，业务类型以 src/shared/contracts.ts 为准。getCourse 按文字聚合返回 total/items，每页 1～200；文本最多100000字符，补充和删除单次最多1000项。整字删除由主进程在当前事务展开。补充修改仅支持编码与分类，编码去首尾空白转小写；内置原码保持不变。
 
 返回新增/删除的生词组合、改码替换、退出课程的文字及受影响课程；补充操作另返回 addedEntries/removedEntries/merged。onChanged 的 addedPairs/removedPairs 为生词组合，补充变更由 affectedCourses 和新快照读取；仅在提交后广播，幂等重放不再次广播。窗口收到通知重取完整快照，不依赖连续事件累积本地数据。练习/游戏接入时还须使用这些最终变更取消失效题和更新提示。
+
+## 阶段 3 已实现范围
+
+saveLearning(Write<LearningWrite>)的value为{course,changes:Learning[],group:string[],cursor}，沿用学习/组同事务和幂等设计。changes最多200条，group最多100个唯一文字，cursor为0～4。主进程事务内验证最终课程归属和记录类型/范围，过期版本不写；已提交请求重放返回原结果，不复活已删除记录。学习写入不重建词库索引；提交后广播revision（affectedCourses为空，避免将学习保存误当词库内容变更）。
+
+setSessionActive(boolean)只同步主窗口内存活动局标记，供退出确认使用，不持久化现场。saveLearning和活动局标记仅主窗口可调用；文本窗口拒绝。主窗口重新加载/渲染进程退出后标记失效。退出未结束局先发pause，再弹系统确认，取消保持暂停。课程/重新开始确认在渲染层执行，确认后才替换局。
+
+渲染层串行提交学习候选，COMMIT成功才替换显示模型；失败暂停，读回当前词库/学习记录并提示。词库通知进入同一操作队列，先使失效当前题的输入代次失效，再按最终集合更新；保持已完成本局统计。原生blur结合窗口焦点/应用激活状态，不监听DOM blur直接暂停，真实候选窗仍待验证。
+
+## 2026-10-31 编码输入变更
+
+旧输入法文字判定、composition 去重及 50ms 缓冲描述仅反映历史实现，已被确认的新编码规则取代，代码整改与本机自动回归已完成，真实键盘验收待补。实施以 [编码整改文档](../plans/phases/phase-03-code-input.md) 为准。保留会话暂停、进度存储与事务边界，未提交编码清空不计错，不自动清空学习记录。
+
+内部 Practice.answer(code: string | null, at) 接受规范化编码，null 独立表示跳过；空串不提交。正确性只比较当前题 codes；输入层按课程长度触发，不改变 IPC 或 SQLite v1。

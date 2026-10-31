@@ -1,4 +1,5 @@
 const {app,BrowserWindow}=require('electron');const assert=require('node:assert/strict');const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+process.on('uncaughtException',e=>{console.error('Uncaught smoke error',e);app.exit(1);});
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'typist-smoke-'));process.env.TYPIST_TEST_USER_DATA=dir;
 const checks=[];let exitCode=0;
 const timeout=setTimeout(()=>{console.error('Smoke timeout');app.exit(1)},25000);
@@ -24,4 +25,4 @@ app.whenReady().then(async()=>{
     console.log(JSON.stringify({platform:process.platform,arch:process.arch,electron:process.versions.electron,checks},null,2));
   }catch(e){console.error(e);exitCode=1;}finally{clearTimeout(timeout);if(exitCode)app.exit(exitCode);else app.quit();}
 });
-app.on('quit',()=>{fs.rmSync(dir,{recursive:true,force:true});process.exitCode=exitCode;});
+app.on('quit',()=>{fs.rmSync(dir,{recursive:true,force:true,maxRetries:10,retryDelay:50});process.exitCode=exitCode;});

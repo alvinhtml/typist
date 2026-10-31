@@ -1,0 +1,72 @@
+
+> typist@0.1.0 test
+> npm run build && node --test tests/*.test.cjs
+
+
+> typist@0.1.0 build
+> npm run typecheck && tsc -p tsconfig.main.json && vite build
+
+
+> typist@0.1.0 typecheck
+> vue-tsc --noEmit
+
+vite v7.3.7 building client environment for production...
+transforming...
+✓ 19 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/renderer/index.html                   0.53 kB │ gzip:  0.37 kB
+dist/renderer/assets/index-wrLb4fzp.css    5.14 kB │ gzip:  1.77 kB
+dist/renderer/assets/index-Dt0eGZv_.js   100.12 kB │ gzip: 37.94 kB
+✓ built in 257ms
+✔ course 1: synchronous length, case normalization, rapid next answer (0.909708ms)
+✔ course 2: synchronous length, case normalization, rapid next answer (0.173917ms)
+✔ course 3: synchronous length, case normalization, rapid next answer (0.12075ms)
+✔ course 4: synchronous length, case normalization, rapid next answer (0.056917ms)
+✔ course 5: synchronous length, case normalization, rapid next answer (0.554416ms)
+✔ course vocabulary: synchronous length, case normalization, rapid next answer (0.056625ms)
+✔ short codes wait for space; backspace, punctuation, repeats, shortcuts and skip (0.102583ms)
+✔ paste/drop, composition and text input never answer; blur and disposal clear partial code (0.2315ms)
+✔ disabled clears unsubmitted buffer; fresh binding accepts new code (0.09925ms)
+✔ learning and group save atomically, idempotency, conflicts and restart without active session (4.071875ms)
+✔ invalid course, duplicate group, record bounds and foreign word are rejected (2.218042ms)
+✔ failed final commit rolls back learning/group/revision and leaves current course intact (2.209541ms)
+✔ vocabulary learning writes cannot resurrect a deleted word; complete model write persists answer and replacement (4.949208ms)
+✔ replaying a committed answer after its vocabulary word is deleted returns the original result without resurrection (3.446375ms)
+✔ initial random unseen group, actual answers cover, wrong and skip reset, words count code points (0.589ms)
+✔ threshold replaces only mastered words on next round and retains unfinished group (0.510042ms)
+✔ replacement cursor accumulates four fresh slots then oldest mastered review, not per round rounding (0.281667ms)
+✔ review failure cancels mastery, all-covered chooses unfinished first; tiny course repeats without duplicate words (0.10025ms)
+✔ sync removes current without errors, keeps finished stats, updates codes and fills only at next round (0.323708ms)
+✔ restart restores group and independent course records; size/threshold changes preserve learning (0.176375ms)
+✔ candidate clone isolates uncommitted answers and zero-submission results have no accuracy (0.159959ms)
+✔ clock excludes pauses, countdown and late timeout input has no effect on score (0.111417ms)
+✔ code matching uses only supplied course codes, accepts alternatives and lowercase, skips explicitly (0.135666ms)
+✔ countdown, pause, manual resume, timeout and snapshot isolation (0.361416ms)
+✔ countdown pause rejects silent restart; manual resume starts without another countdown (0.105917ms)
+✔ defaults, atomic settings, idempotency, conflicts and reopening (3.745917ms)
+✔ learning schema persists without persisting an active session (3.022333ms)
+✔ invalid values and disk write failure do not commit (1.7725ms)
+✔ future, unknown and corrupt databases are retained (1.232ms)
+✔ failure after settings update rolls back settings and revision together (1.968875ms)
+✔ unknown schema is not reset; an existing empty database gets a backup (2.404959ms)
+✔ longest phrases, no internal singles, separators, unknown distinct and all codes (1.143583ms)
+✔ text additions count occurrences, report only new codes and preserve progress; restart (6.619833ms)
+✔ supplemental validation, normalization, built-in duplicate and no automatic vocabulary (2.976791ms)
+✔ code replacement merging preserves other codes and valid learning; final classification cleans only exited course (6.268958ms)
+✔ atomic remove/add keeps final sources and progress; deleting uncollected entry never adds vocabulary (3.27625ms)
+✔ pair and word batch deletion retain learning until last code; word resolved using current snapshot (2.513083ms)
+✔ idempotent writes, conflicts, invalid batches and mid-transaction failure roll back index and data (2.79625ms)
+✔ real built-in corpus loads five courses and preserves original codes (97.51ms)
+✔ empty results, existing-only input and unknown content never report false additions (2.779541ms)
+✔ batch supplemental removal keeps built-in and remaining codes; classification change keeps vocabulary progress (4.0925ms)
+✔ a failed code replacement restores original code, learning, group and revision (2.894792ms)
+✔ a multi-operation replacement publishes only the final code and preserves learning (2.473833ms)
+ℹ tests 43
+ℹ suites 0
+ℹ pass 43
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 180.281167

@@ -6,7 +6,7 @@ import { Store, StoreError, failure } from './storage';
 import { readBuiltin } from './dictionary';
 import type { Changed, VocabularyChange, Result } from '../shared/contracts';
 let store:Store|undefined, startupError:unknown;
-let main:BrowserWindow|null=null, text:BrowserWindow|null=null, tray:Tray|null=null, quitting=false;
+let main:BrowserWindow|null=null, text:BrowserWindow|null=null, tray:Tray|null=null, quitting=false,sessionActive=false,confirmingQuit=false;
 const page=join(__dirname,'../renderer/index.html');
 const allowed=pathToFileURL(page).href;
 // A test process may select a disposable directory without touching the user's data.
@@ -16,22 +16,41 @@ function windowFor(kind:'main'|'text') {
   if(current&&!current.isDestroyed()){current.show();if(current.isMinimized())current.restore();current.focus();return current;}
   const win=new BrowserWindow({width:kind==='main'?1100:480,height:780,minWidth:kind==='main'?760:420,minHeight:640,show:false,webPreferences:{preload:join(__dirname,'../preload/index.js'),contextIsolation:true,sandbox:true,nodeIntegration:false}});
   if(kind==='main')main=win;else text=win;
+  win.webContents.on('did-start-loading',()=>{if(kind==='main')sessionActive=false;});
+  win.webContents.on('render-process-gone',()=>{if(kind==='main')sessionActive=false;});
   win.webContents.setWindowOpenHandler(()=>({action:'deny'}));
   win.webContents.on('will-navigate',e=>e.preventDefault());
   win.on('close',e=>{if(!quitting){e.preventDefault();win.webContents.send('pause');win.hide();}});
   win.on('minimize',()=>win.webContents.send('pause'));
-  win.on('blur',()=>win.webContents.send('pause'));
+  win.on('blur',()=>{
+    // Candidate panels may transiently change focus without deactivating this macOS app.
+    const check=()=>{if(win.isDestroyed()||win.isFocused())return;const focused=BrowserWindow.getFocusedWindow();if(process.platform==='darwin'&&app.isActive()&&!focused)return;win.webContents.send('pause');};
+    check();setTimeout(check,20);
+  });
   win.on('closed',()=>{if(kind==='main')main=null;else text=null;});
   void win.loadFile(page,{hash:kind==='text'?'text':'practice'}).then(()=>win.show());
   return win;
 }
-function quit(){quitting=true;app.quit();}
+async function quit(){
+  if(quitting||confirmingQuit)return;confirmingQuit=true;
+  try{
+    if(sessionActive){
+      main?.webContents.send('pause');
+      const options={type:'question' as const,buttons:['继续练习','退出应用'],defaultId:0,cancelId:0,message:'当前一局尚未结束，确定退出？',detail:'已完成的学习进度会保留，重启不恢复本局现场。'};
+      const result=main&&!main.isDestroyed()?await dialog.showMessageBox(main,options):await dialog.showMessageBox(options);
+      if(result.response!==1)return;
+    }
+    quitting=true;app.quit();
+  }finally{confirmingQuit=false;}
+}
 function register() {
   function business(request:any,run:()=>{result:Result<VocabularyChange>;committed:boolean}){
     const {result,committed}=run();if(committed&&result.ok){const event:Changed={revision:result.revision,requestId:request.requestId,affectedCourses:result.value.affectedCourses,addedPairs:result.value.addedPairs,removedPairs:result.value.removedPairs,codeReplacements:result.value.codeReplacements,removedCourseWords:result.value.removedCourseWords};for(const win of BrowserWindow.getAllWindows())win.webContents.send('changed',event);}return result;
   }
   const handlers:Record<string,(arg:any)=>unknown>={
     snapshot:()=>{if(!store)throw startupError;return store.snapshot();},
+    'session-active':active=>{if(typeof active!=='boolean')throw new StoreError('VALIDATION','无效会话状态。');sessionActive=active;return {ok:true,value:null,revision:store?.revision??0};},
+    learning:request=>{if(!store)throw startupError;const {result,committed}=store.saveLearning(request);if(committed&&result.ok){const event:Changed={revision:result.revision,requestId:request.requestId,affectedCourses:[],addedPairs:[],removedPairs:[],codeReplacements:[],removedCourseWords:[]};for(const win of BrowserWindow.getAllWindows())win.webContents.send('changed',event);}return result;},
     course:request=>{if(!store)throw startupError;return store.getCourse(request);},
     supplemental:request=>{if(!store)throw startupError;return business(request,()=>store!.mutateSupplemental(request));},
     'add-text':request=>{if(!store)throw startupError;return business(request,()=>store!.addVocabularyText(request));},
@@ -43,7 +62,7 @@ function register() {
     quit:()=>{setImmediate(quit);return {ok:true,value:null,revision:store?.revision??0};}
   };
   for(const [channel,handler] of Object.entries(handlers)) ipcMain.handle(channel,(event,arg)=>{
-    try {if(![main,text].some(w=>w?.webContents===event.sender)||event.senderFrame!==event.sender.mainFrame||event.senderFrame.url.split('#')[0]!==allowed)throw new StoreError('VALIDATION','不受信任的窗口请求。');return handler(arg);}catch(e){return failure(e);}
+    try {if(![main,text].some(w=>w?.webContents===event.sender)||event.senderFrame!==event.sender.mainFrame||event.senderFrame.url.split('#')[0]!==allowed)throw new StoreError('VALIDATION','不受信任的窗口请求。');if(['learning','session-active'].includes(channel)&&event.sender!==main?.webContents)throw new StoreError('VALIDATION','练习进度仅允许主窗口写入。');return handler(arg);}catch(e){return failure(e);}
   });
 }
 if(!app.requestSingleInstanceLock()){app.quit();}else {
@@ -63,6 +82,6 @@ if(!app.requestSingleInstanceLock()){app.quit();}else {
   });
   app.on('activate',()=>{if(app.isReady())windowFor('main');});
   app.on('window-all-closed',()=>{});
-  app.on('before-quit',()=>{quitting=true;});
+  app.on('before-quit',event=>{if(sessionActive&&!quitting){event.preventDefault();void quit();}else quitting=true;});
   app.on('will-quit',()=>{tray?.destroy();store?.close();});
 }

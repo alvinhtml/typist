@@ -15,7 +15,9 @@
     "smoke": "npm run build && electron tests/smoke.cjs",
     "package": "npm run build && electron-forge package",
     "make": "npm run build && electron-forge make",
-    "smoke:business": "npm run build && electron tests/business-smoke.cjs"
+    "smoke:business": "npm run build && electron tests/business-smoke.cjs",
+    "smoke:practice": "npm run build && electron tests/practice-smoke.cjs",
+    "smoke:ui": "npm run build && electron tests/ui-smoke.cjs"
   },
   "dependencies": {
     "vue": "3.5.44"

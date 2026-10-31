@@ -1,5 +1,5 @@
 import { Dictionary, courses, pairKey } from './dictionary';
-import type { Entry, Pair, Course, SupplementalOperation, SupplementalChange, TextAddition, VocabularyChange, VocabularySelection, CodeReplacement } from '../shared/contracts';
+import type { LearningWrite, Entry, Pair, Course, SupplementalOperation, SupplementalChange, TextAddition, VocabularyChange, VocabularySelection, CodeReplacement } from '../shared/contracts';
 import { DatabaseSync } from 'node:sqlite';
 import { existsSync, copyFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -59,7 +59,7 @@ export class Store {
     if(!request||!courses.includes(request.course)||!Number.isSafeInteger(request.offset)||request.offset<0||!Number.isSafeInteger(request.limit)||request.limit<1||request.limit>200)throw new StoreError('VALIDATION','无效课程或分页范围。');
     return {ok:true as const,revision:this.revision,value:this.index.page(request.course,request.offset,request.limit)};
   }
-  private write<T>(kind:string,request:Write<unknown>,action:()=>T):{result:Result<T>;committed:boolean}{
+  private write<T>(kind:string,request:Write<unknown>,action:()=>T,rebuild=true):{result:Result<T>;committed:boolean}{
     if(!request||typeof request.requestId!=='string'||!/^[a-zA-Z0-9-]{1,100}$/.test(request.requestId)||!Number.isSafeInteger(request.expectedRevision)||request.expectedRevision<0)throw new StoreError('VALIDATION','无效的写入请求。');
     const hash=createHash('sha256').update(JSON.stringify([kind,request.expectedRevision,request.value])).digest('hex');
     this.db.exec('BEGIN IMMEDIATE');
@@ -67,7 +67,7 @@ export class Store {
       const prior=this.db.prepare('SELECT * FROM applied_request WHERE requestId=?').get(request.requestId);
       if(prior){if(prior.payloadHash!==hash)throw new StoreError('VALIDATION','相同请求编号不能用于不同内容。');this.db.exec('ROLLBACK');return {result:JSON.parse(String(prior.result)),committed:false};}
       if(request.expectedRevision!==this.revision)throw new StoreError('CONFLICT',`数据已更新（当前版本 ${this.revision}），请重新加载后重试。`);
-      const value=action();const next=this.makeIndex();
+      const value=action();const next=rebuild?this.makeIndex():this.index;
       this.db.exec('UPDATE metadata SET revision=revision+1 WHERE id=1');
       const result:Result<T>={ok:true,value,revision:this.revision};
       this.db.prepare('INSERT INTO applied_request VALUES(?,?,?,?)').run(request.requestId,hash,JSON.stringify(result),result.revision);
@@ -141,6 +141,23 @@ export class Store {
       const equal=(a:Entry,b:Entry)=>pairKey(a)===pairKey(b)&&a.level===b.level;
       return {...change,merged,addedEntries:after.supplemental.filter(a=>!before.supplemental.some(b=>equal(a,b))),removedEntries:before.supplemental.filter(a=>!after.supplemental.some(b=>equal(a,b)))};
     });
+  }
+  saveLearning(request:Write<LearningWrite>){
+    const v=request?.value;
+    if(!v||!courses.includes(v.course)||!Array.isArray(v.changes)||v.changes.length>200||!Array.isArray(v.group)||v.group.length>100||new Set(v.group).size!==v.group.length||!Number.isInteger(v.cursor)||v.cursor<0||v.cursor>4)throw new StoreError('VALIDATION','无效学习进度。');
+    return this.write('learning',request,()=>{
+      const valid=this.index.byCourse.get(v.course)!;
+      for(const word of v.group)if(typeof word!=='string'||!valid.has(word))throw new StoreError('VALIDATION','练习组包含不属于该课程的文字。');
+      const words=new Set<string>();
+      for(const row of v.changes){
+        if(!row||row.course!==v.course||typeof row.word!=='string'||!valid.has(row.word)||words.has(row.word)||![0,1].includes(row.covered)||![0,1].includes(row.mastered)||!Number.isSafeInteger(row.streak)||row.streak<0||!Number.isSafeInteger(row.mistakes)||row.mistakes<0||(row.lastAnsweredAt!==null&&(!Number.isSafeInteger(row.lastAnsweredAt)||row.lastAnsweredAt<0)))throw new StoreError('VALIDATION','学习记录字段或课程归属无效。');
+        words.add(row.word);
+      }
+      const statement=this.db.prepare('INSERT INTO learning VALUES(?,?,?,?,?,?,?) ON CONFLICT(course,word) DO UPDATE SET covered=excluded.covered,streak=excluded.streak,mistakes=excluded.mistakes,lastAnsweredAt=excluded.lastAnsweredAt,mastered=excluded.mastered');
+      for(const row of v.changes)statement.run(row.course,row.word,row.covered,row.streak,row.mistakes,row.lastAnsweredAt,row.mastered);
+      this.db.prepare('INSERT INTO course_progress VALUES(?,?,?) ON CONFLICT(course) DO UPDATE SET cursor=excluded.cursor,orderedGroupWords=excluded.orderedGroupWords').run(v.course,v.cursor,JSON.stringify(v.group));
+      return {course:v.course};
+    },false);
   }
   updateSettings(request:Write<Settings>):{result:Result<Settings>; committed:boolean} {
     if(!request||typeof request.requestId!=='string'||!/^[a-zA-Z0-9-]{1,100}$/.test(request.requestId)||!Number.isSafeInteger(request.expectedRevision)||request.expectedRevision<0) throw new StoreError('VALIDATION','无效的写入请求。');

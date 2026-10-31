@@ -11,6 +11,8 @@ export type Changed = {revision:number; requestId:string; affectedCourses:Course
 export interface Bridge {
   getSnapshot(): Promise<Result<Snapshot>>;
   getResources(): Promise<Result<{level:number; bytes:number}[]>>;
+  saveLearning(request:Write<LearningWrite>):Promise<Result<{course:Course}>>;
+  setSessionActive(active:boolean):Promise<Result<null>>;
   getCourse(request:{course:Course;offset:number;limit:number}):Promise<Result<{total:number;items:CourseWord[]}>>;
   mutateSupplemental(request:Write<SupplementalOperation[]>):Promise<Result<SupplementalChange>>;
   addVocabularyText(request:Write<string>):Promise<Result<TextAddition>>;
@@ -33,3 +35,4 @@ export type VocabularyChange = {addedPairs:Pair[];removedPairs:Pair[];codeReplac
 export type TextAddition = VocabularyChange & {duplicateOccurrences:number;unknownDistinct:string[]};
 export type SupplementalChange = VocabularyChange & {merged:number;addedEntries:Entry[];removedEntries:Entry[]};
 export type VocabularySelection = {pairs:Pair[];words:string[]};
+export type LearningWrite={course:Course;changes:Learning[];group:string[];cursor:number};

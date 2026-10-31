@@ -1,4 +1,5 @@
 const {app,BrowserWindow}=require('electron');const assert=require('node:assert/strict');const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+process.on('uncaughtException',e=>{console.error('Uncaught smoke error',e);app.exit(1);});
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'typist-business-smoke-'));process.env.TYPIST_TEST_USER_DATA=dir;app.setAppPath(path.resolve(__dirname,'..'));
 const checks=[];const timeout=setTimeout(()=>{console.error('Business smoke timeout');app.exit(1)},45000);let exitCode=0;
 require('../dist/main/index');
@@ -6,7 +7,7 @@ const wait=()=>new Promise(r=>setTimeout(r,100));
 async function loaded(win){if(win.webContents.isLoading())await new Promise(r=>win.webContents.once('did-finish-load',r));}
 app.whenReady().then(async()=>{try{
  await new Promise(r=>setTimeout(r,800));const main=BrowserWindow.getAllWindows()[0];await loaded(main);const call=code=>main.webContents.executeJavaScript(code);
- async function nav(label){await call(`Array.from(document.querySelectorAll('nav button')).find(b=>b.textContent===${JSON.stringify(label)}).click()`);await wait();}
+ async function nav(label){await call(`document.querySelector('[data-page=home]')?.click()`);await wait();await call(`Array.from(document.querySelectorAll('nav button')).find(b=>b.textContent===${JSON.stringify(label)}).click()`);await wait();}
  await nav('设置中心');
  await call(`(()=>{const set=(q,v)=>{const e=document.querySelector(q);e.value=v;e.dispatchEvent(new Event('input',{bubbles:true}));};set('[aria-label="补充文字"]','阶段二测试词');set('[aria-label="补充编码"]','xyyz');const select=document.querySelector('.business select');select.value='5';select.dispatchEvent(new Event('change',{bubbles:true}));})()`);await wait();await call(`document.querySelector('.business form').requestSubmit()`);await wait();
  let snap=await call('window.typist.getSnapshot()');assert.equal(snap.value.supplemental.length,1);assert.equal(snap.value.vocabulary.length,0);assert.equal(snap.value.supplemental[0].code,'xyyz');checks.push('settings form adds supplemental without adding vocabulary');
@@ -27,4 +28,4 @@ app.whenReady().then(async()=>{try{
  for(const course of ['1','2','3','4','5']){const r=await call(`window.typist.getCourse({course:'${course}',offset:0,limit:5})`);assert.equal(r.ok,true);assert.ok(r.value.total>0);assert.equal(r.value.items.length,5);}checks.push('five real merged courses paginated through sandbox bridge');
  console.log(JSON.stringify({platform:process.platform,arch:process.arch,electron:process.versions.electron,checks},null,2));
 }catch(e){console.error(e);exitCode=1;}finally{clearTimeout(timeout);if(exitCode)app.exit(1);else{setTimeout(()=>{console.error('Business smoke shutdown timeout');app.exit(1)},5000).unref();app.quit();}}});
-app.on('quit',()=>{fs.rmSync(dir,{recursive:true,force:true});process.exit(exitCode);});
+app.on('quit',()=>{fs.rmSync(dir,{recursive:true,force:true,maxRetries:10,retryDelay:50});process.exit(exitCode);});

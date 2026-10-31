@@ -1,0 +1,21 @@
+{
+  "platform": "darwin",
+  "arch": "arm64",
+  "electron": "44.2.0",
+  "checks": [
+    "three-second countdown, unseen words are not covered, short course shrinks group",
+    "narrow-window adaptive display changes visible batch without changing group, current question or score",
+    "composition and Chinese commits ignored; uppercase short code waits for space; skip shows aligned code feedback",
+    "paste rejected and partial input cancelled on pause; old input node cannot submit after resume",
+    "code changes update future error hints while retaining the valid current word and completed scores",
+    "leaving page and closing to tray pause without losing score or elapsed time; reopening requires manual resume",
+    "native window focus change and minimize auto-pause; settings changes do not alter the active snapshot",
+    "quit and course-switch cancellation retain paused scene and completed score",
+    "cross-window current-word removal cancels without error; empty course ends and retains completed score; text window cannot write active session",
+    "resume from countdown does not repeat countdown; deadline ends a zero-answer session with no accuracy and zero speed",
+    "code completed before deadline saved once; late key ignored",
+    "rapid full codes map to successive questions before async save completes; immediate pause retains both completed answers",
+    "injected save failure pauses and discards subsequent queued answer without changing committed score",
+    "renderer restart restores persistent group but does not restore an active game or score"
+  ]
+}

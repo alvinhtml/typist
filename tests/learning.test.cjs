@@ -1,0 +1,21 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
+const {Store}=require('../dist/main/storage');const {Practice}=require('../dist/shared/practice');const {defaults}=require('../dist/shared/contracts');
+const builtins=[{word:'工',code:'a',level:1},{word:'了',code:'b',level:1},{word:'工',code:'aa',level:2}];
+function fixture(t){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'typist-learning-'));const file=path.join(dir,'data.sqlite');let s=new Store(file,builtins);t.after(()=>{s.close();fs.rmSync(dir,{recursive:true,force:true});});return {get s(){return s},reopen(){s.close();s=new Store(file,builtins)},request(value,id='learning'){return {requestId:id,expectedRevision:s.revision,value}}};}
+const row={course:'1',word:'工',covered:1,streak:2,mistakes:1,lastAnsweredAt:100,mastered:0};const data={course:'1',changes:[row],group:['工','了'],cursor:4};
+test('learning and group save atomically, idempotency, conflicts and restart without active session',t=>{
+ const f=fixture(t),req=f.request(data);assert.equal(f.s.saveLearning(req).committed,true);assert.equal(f.s.saveLearning(req).committed,false);assert.throws(()=>f.s.saveLearning({...req,value:{...data,cursor:2}}),{code:'VALIDATION'});assert.throws(()=>f.s.saveLearning({...req,requestId:'stale'}),{code:'CONFLICT'});f.reopen();const snap=f.s.snapshot();assert.equal(snap.value.learning[0].streak,2);assert.deepEqual(snap.value.courseProgress[0].orderedGroupWords,['工','了']);assert.equal(snap.value.courseProgress[0].cursor,4);assert.equal('session'in snap.value,false);
+});
+test('invalid course, duplicate group, record bounds and foreign word are rejected',t=>{
+ const f=fixture(t);for(const invalid of [{...data,course:'6'},{...data,group:['工','工']},{...data,cursor:5},{...data,group:['学']},{...data,changes:[{...row,course:'2'}]},{...data,changes:[{...row,streak:-1}]},{...data,changes:[{...row,covered:2}]},{...data,changes:[{...row,lastAnsweredAt:NaN}]},{...data,changes:[row,row]}])assert.throws(()=>f.s.saveLearning(f.request(invalid)),{code:'VALIDATION'});assert.equal(f.s.revision,0);
+});
+test('failed final commit rolls back learning/group/revision and leaves current course intact',t=>{
+ const f=fixture(t);f.s.db.exec("CREATE TRIGGER fail_request BEFORE INSERT ON applied_request BEGIN SELECT RAISE(ABORT,'disk failure'); END");assert.throws(()=>f.s.saveLearning(f.request(data)));assert.equal(f.s.revision,0);assert.equal(f.s.snapshot().value.learning.length,0);assert.equal(f.s.snapshot().value.courseProgress.length,0);assert.equal(f.s.getCourse({course:'1',offset:0,limit:10}).value.total,2);
+});
+test('vocabulary learning writes cannot resurrect a deleted word; complete model write persists answer and replacement',t=>{
+ const f=fixture(t);const p=new Practice('1',[{word:'工',codes:['a']},{word:'了',codes:['b']}],{...defaults,threshold:1},[],undefined,()=>0.5);p.answer(p.items.get(p.current)[0],100);const r=f.s.saveLearning(f.request(p.write()));assert.equal(r.result.ok,true);assert.equal(f.s.snapshot().value.learning.filter(l=>l.covered).length,1);
+ f.s.addVocabularyText(f.request('工','text'));const vocab={course:'vocabulary',changes:[{...row,course:'vocabulary'}],group:['工'],cursor:0};const stale=f.request(vocab,'vocab-stale');f.s.deleteVocabulary(f.request({pairs:[],words:['工']},'delete'));assert.throws(()=>f.s.saveLearning(stale),{code:'CONFLICT'});assert.throws(()=>f.s.saveLearning({...stale,expectedRevision:f.s.revision}),{code:'VALIDATION'});assert.equal(f.s.snapshot().value.vocabulary.length,0);
+});
+test('replaying a committed answer after its vocabulary word is deleted returns the original result without resurrection',t=>{
+ const f=fixture(t);f.s.addVocabularyText(f.request('工','add'));const data={course:'vocabulary',changes:[{...row,course:'vocabulary'}],group:['工'],cursor:0};const request=f.request(data,'answer');const original=f.s.saveLearning(request);f.s.deleteVocabulary(f.request({pairs:[],words:['工']},'delete'));const replay=f.s.saveLearning(request);assert.equal(replay.committed,false);assert.deepEqual(replay.result,original.result);assert.equal(f.s.snapshot().value.learning.length,0);
+});
