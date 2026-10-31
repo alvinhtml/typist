@@ -2,12 +2,14 @@
 import PracticePanel from './PracticePanel.vue';
 import VocabularyPanel from './VocabularyPanel.vue';
 import {nextTick,onMounted,onUnmounted,ref} from 'vue';
-import {defaults,type Settings} from '../shared/contracts';
+import {defaults,type Settings,type CsvKind,type CsvReport} from '../shared/contracts';
 const pages=[['practice','分级练习'],['vocabulary','生词本'],['text','添加文本'],['game','打字游戏'],['settings','设置中心']];
 const compact=location.hash==='#text';
 const page=ref(compact?'text':'home');const error=ref('');const status=ref('');const revision=ref(0);const ready=ref(false);const busy=ref(false);
 const settings=ref<Settings>({...defaults});const resources=ref<{level:number;bytes:number}[]>([]);
 const practice=ref<InstanceType<typeof PracticePanel>>();
+const csvReport=ref<CsvReport|null>(null);
+async function exchange(kind:CsvKind, importing:boolean){busy.value=true;error.value='';status.value='';csvReport.value=null;try{if(importing){const r=await window.typist.importCsv({requestId:crypto.randomUUID(),expectedRevision:revision.value,value:kind});if(r.ok){csvReport.value=r.value;await load();}else if(r.error.code!=='CANCELLED'){error.value=r.error.message;if(r.error.code==='CONFLICT')await load();}}else{const r=await window.typist.exportCsv(kind);if(r.ok)status.value=`已导出 ${r.value.count} 个编码组合。`;else if(r.error.code!=='CANCELLED')error.value=r.error.message;}}catch{error.value='文件交换失败，请重试。';}finally{busy.value=false;}}
 let navigating=false;
 async function navigate(next:string,course?:'vocabulary'|'graded'){
   if(navigating)return;
@@ -43,6 +45,7 @@ onUnmounted(()=>cleanup());
     </main>
     <main v-else-if="page!=='practice'" class="management">
       <section v-if="page==='settings'" class="card"><h2>练习偏好</h2><p>统一用于所有课程，下次开始时生效。</p><form @submit.prevent="save"><label>每组题数<input v-model.number="settings.groupSize" type="number" min="5" max="100" required></label><label>连续正确阈值<input v-model.number="settings.threshold" type="number" min="1" max="10" required></label><label>练习时长<select v-model.number="settings.duration"><option v-for="n in 5" :value="n">{{n}} 分钟</option></select></label><label>游戏难度<select v-model="settings.difficulty"><option value="easy">简单</option><option value="normal">普通</option><option value="hard">困难</option></select></label><button class="primary" :disabled="!ready||busy">{{busy?'保存中…':'保存设置'}}</button></form></section>
+      <section v-if="page==='settings'" class="card"><h2>CSV 导入导出</h2><p>迁移时先导入补充词库，再导入生词本；文件不包含学习进度。</p><div v-for="kind in (['supplemental','vocabulary'] as const)" :key="kind"><strong>{{kind==='supplemental'?'补充词库':'生词本'}}</strong> <button :disabled="busy||!ready" @click="exchange(kind,true)">导入 CSV</button> <button :disabled="busy||!ready" @click="exchange(kind,false)">导出 CSV</button></div><div v-if="csvReport" role="status"><p>新增 {{csvReport.added}} · 重复忽略 {{csvReport.duplicates}} · 失败 {{csvReport.failed}}</p><details v-if="csvReport.issues.length"><summary>查看行级原因</summary><p v-for="(issue,i) in csvReport.issues" :key="i">第 {{issue.line}} 行：{{issue.reason}}</p></details></div></section>
       <VocabularyPanel v-if="page==='settings'" mode="supplemental"/>
       <VocabularyPanel v-if="page==='text'||page==='vocabulary'" :key="page" :mode="page==='text'?'text':'vocabulary'"/>
       <section v-if="page==='game'" class="empty-state"><span class="eyebrow">即将开放</span><h1>打字游戏</h1><p>下落消除游戏将在后续阶段接入。</p><button class="primary" @click="navigate('home')">返回首页</button></section>

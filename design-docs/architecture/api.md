@@ -41,3 +41,7 @@ setSessionActive(boolean)只同步主窗口内存活动局标记，供退出确�
 旧输入法文字判定、composition 去重及 50ms 缓冲描述仅反映历史实现，已被确认的新编码规则取代，代码整改与本机自动回归已完成，真实键盘验收待补。实施以 [编码整改文档](../plans/phases/phase-03-code-input.md) 为准。保留会话暂停、进度存储与事务边界，未提交编码清空不计错，不自动清空学习记录。
 
 内部 Practice.answer(code: string | null, at) 接受规范化编码，null 独立表示跳过；空串不提交。正确性只比较当前题 codes；输入层按课程长度触发，不改变 IPC 或 SQLite v1。
+
+## 阶段 4 已实现范围
+
+importCsv(Write<CsvKind>)、exportCsv(CsvKind)，kind仅允许vocabulary/supplemental；路径只由主进程系统对话框取得。导入返回CsvReport：完整VocabularyChange与added/duplicates/failed/issues（物理起始行号、原因）。先严格UTF-8和CSV结构解析，再在单事务内校验行、合并、协调最终词库；沿用版本检查与请求幂等，幂等哈希包含文件字节，提交后统一通知。文件选择期间其他写入会导致CONFLICT；取消返回CANCELLED且不写入。导出返回count，UTF-8 BOM且仅包含该类组合；文件IO失败返回IO。异步IPC异常也转换为Result。SQLite仍为v1，无迁移。

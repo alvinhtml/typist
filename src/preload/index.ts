@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { Bridge, Changed } from '../shared/contracts';
 const bridge:Bridge = {
+  importCsv:request=>ipcRenderer.invoke('import-csv',request),
+  exportCsv:kind=>ipcRenderer.invoke('export-csv',kind),
   getSnapshot:()=>ipcRenderer.invoke('snapshot'), getResources:()=>ipcRenderer.invoke('resources'),
   saveLearning:request=>ipcRenderer.invoke('learning',request),
   setSessionActive:active=>ipcRenderer.invoke('session-active',active),

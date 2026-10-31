@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, dialog } from 'electron';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { Store, StoreError, failure } from './storage';
 import { readBuiltin } from './dictionary';
 import type { Changed, VocabularyChange, Result } from '../shared/contracts';
@@ -48,6 +48,21 @@ function register() {
     const {result,committed}=run();if(committed&&result.ok){const event:Changed={revision:result.revision,requestId:request.requestId,affectedCourses:result.value.affectedCourses,addedPairs:result.value.addedPairs,removedPairs:result.value.removedPairs,codeReplacements:result.value.codeReplacements,removedCourseWords:result.value.removedCourseWords};for(const win of BrowserWindow.getAllWindows())win.webContents.send('changed',event);}return result;
   }
   const handlers:Record<string,(arg:any)=>unknown>={
+    'import-csv':async request=>{
+      if(!store)throw startupError;
+      if(!request||!['vocabulary','supplemental'].includes(request.value))throw new StoreError('VALIDATION','无效文件类型。');
+      main?.webContents.send('pause');
+      const selection=await dialog.showOpenDialog({properties:['openFile'],filters:[{name:'CSV',extensions:['csv']}]});
+      if(selection.canceled)throw new StoreError('CANCELLED','已取消导入。');
+      return business(request,()=>store!.importCsv(request,readFileSync(selection.filePaths[0])));
+    },
+    'export-csv':async kind=>{
+      if(!store)throw startupError;if(!['vocabulary','supplemental'].includes(kind))throw new StoreError('VALIDATION','无效文件类型。');
+      main?.webContents.send('pause');
+      const selection=await dialog.showSaveDialog({defaultPath:`${kind}.csv`,filters:[{name:'CSV',extensions:['csv']}]});
+      if(selection.canceled||!selection.filePath)throw new StoreError('CANCELLED','已取消导出。');
+      const data=store.exportCsv(kind);writeFileSync(selection.filePath,data.text,'utf8');return {ok:true,value:{count:data.count},revision:store.revision};
+    },
     snapshot:()=>{if(!store)throw startupError;return store.snapshot();},
     'session-active':active=>{if(typeof active!=='boolean')throw new StoreError('VALIDATION','无效会话状态。');sessionActive=active;return {ok:true,value:null,revision:store?.revision??0};},
     learning:request=>{if(!store)throw startupError;const {result,committed}=store.saveLearning(request);if(committed&&result.ok){const event:Changed={revision:result.revision,requestId:request.requestId,affectedCourses:[],addedPairs:[],removedPairs:[],codeReplacements:[],removedCourseWords:[]};for(const win of BrowserWindow.getAllWindows())win.webContents.send('changed',event);}return result;},
@@ -61,8 +76,8 @@ function register() {
     'open-text':()=>{windowFor('text');return {ok:true,value:null,revision:store?.revision??0};},
     quit:()=>{setImmediate(quit);return {ok:true,value:null,revision:store?.revision??0};}
   };
-  for(const [channel,handler] of Object.entries(handlers)) ipcMain.handle(channel,(event,arg)=>{
-    try {if(![main,text].some(w=>w?.webContents===event.sender)||event.senderFrame!==event.sender.mainFrame||event.senderFrame.url.split('#')[0]!==allowed)throw new StoreError('VALIDATION','不受信任的窗口请求。');if(['learning','session-active'].includes(channel)&&event.sender!==main?.webContents)throw new StoreError('VALIDATION','练习进度仅允许主窗口写入。');return handler(arg);}catch(e){return failure(e);}
+  for(const [channel,handler] of Object.entries(handlers)) ipcMain.handle(channel,async(event,arg)=>{
+    try {if(![main,text].some(w=>w?.webContents===event.sender)||event.senderFrame!==event.sender.mainFrame||event.senderFrame.url.split('#')[0]!==allowed)throw new StoreError('VALIDATION','不受信任的窗口请求。');if(['learning','session-active'].includes(channel)&&event.sender!==main?.webContents)throw new StoreError('VALIDATION','练习进度仅允许主窗口写入。');return await handler(arg);}catch(e){return failure(e);}
   });
 }
 if(!app.requestSingleInstanceLock()){app.quit();}else {

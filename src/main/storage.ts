@@ -1,3 +1,5 @@
+import { parseCsv, serializeCsv } from './csv';
+import type { CsvKind, CsvReport } from '../shared/contracts';
 import { Dictionary, courses, pairKey } from './dictionary';
 import type { LearningWrite, Entry, Pair, Course, SupplementalOperation, SupplementalChange, TextAddition, VocabularyChange, VocabularySelection, CodeReplacement } from '../shared/contracts';
 import { DatabaseSync } from 'node:sqlite';
@@ -140,6 +142,27 @@ export class Store {
       const change=this.reconcile(before,codeReplacements),after=this.snapshotValue();
       const equal=(a:Entry,b:Entry)=>pairKey(a)===pairKey(b)&&a.level===b.level;
       return {...change,merged,addedEntries:after.supplemental.filter(a=>!before.supplemental.some(b=>equal(a,b))),removedEntries:before.supplemental.filter(a=>!after.supplemental.some(b=>equal(a,b)))};
+    });
+  }
+  exportCsv(kind:CsvKind){const snapshot=this.snapshotValue();return {text:serializeCsv(kind,snapshot[kind]),count:snapshot[kind].length};}
+  importCsv(request:Write<CsvKind>,bytes:Uint8Array){
+    let rows:ReturnType<typeof parseCsv>;try{rows=parseCsv(bytes,request.value);}catch(e){throw new StoreError('VALIDATION',(e as Error).message);}
+    return this.write<CsvReport>('import-csv',{...request,value:{kind:request.value,content:Buffer.from(bytes).toString('base64')}},()=>{
+      const before=this.snapshotValue(),issues:CsvReport['issues']=[];let added=0,duplicates=0,failed=0;
+      const known=new Dictionary(this.builtin,before.supplemental),existing=new Map((request.value==='supplemental'?[...this.builtin,...before.supplemental]:before.vocabulary).map(p=>[pairKey(p),p]));
+      for(const row of rows){
+        try{
+          const pair={word:row.word,code:row.code.trim().toLowerCase()};this.pair(pair);
+          const entry=request.value==='supplemental'?this.entry({...pair,level:/^[1-5]$/.test(row.level)?Number(row.level):0}):pair;
+          if(request.value==='vocabulary'&&!known.pairs.has(pairKey(pair)))throw new Error('文字与编码未匹配本机词库，请先导入补充词库。');
+          const prior=existing.get(pairKey(entry));
+          if(prior){duplicates++;if('level' in entry&&'level' in prior&&entry.level!==prior.level)issues.push({line:row.line,reason:'分类冲突，保留已有分类（重复忽略）。'});continue;}
+          if(request.value==='supplemental')this.db.prepare('INSERT INTO supplemental VALUES(?,?,?)').run(entry.word,entry.code,(entry as Entry).level);
+          else this.db.prepare('INSERT INTO vocabulary VALUES(?,?)').run(entry.word,entry.code);
+          existing.set(pairKey(entry),entry);added++;
+        }catch(e){if(!(e instanceof StoreError)&&!((e as Error).message.startsWith('文字与编码未匹配')))throw e;failed++;issues.push({line:row.line,reason:(e as Error).message});}
+      }
+      return {...this.reconcile(before,[]),added,duplicates,failed,issues};
     });
   }
   saveLearning(request:Write<LearningWrite>){

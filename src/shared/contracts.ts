@@ -8,7 +8,11 @@ export type ErrorCode = 'VALIDATION' | 'CONFLICT' | 'IO' | 'MIGRATION' | 'CANCEL
 export type Result<T> = {ok:true; value:T; revision:number} | {ok:false; error:{code:ErrorCode; message:string; retryable:boolean}};
 export type Write<T> = {requestId:string; expectedRevision:number; value:T};
 export type Changed = {revision:number; requestId:string; affectedCourses:Course[]; addedPairs:Pair[]; removedPairs:Pair[]; codeReplacements:CodeReplacement[]; removedCourseWords:RemovedCourseWord[]};
+export type CsvKind = 'vocabulary' | 'supplemental';
+export type CsvReport = VocabularyChange & {added:number;duplicates:number;failed:number;issues:{line:number;reason:string}[]};
 export interface Bridge {
+  importCsv(request:Write<CsvKind>):Promise<Result<CsvReport>>;
+  exportCsv(kind:CsvKind):Promise<Result<{count:number}>>;
   getSnapshot(): Promise<Result<Snapshot>>;
   getResources(): Promise<Result<{level:number; bytes:number}[]>>;
   saveLearning(request:Write<LearningWrite>):Promise<Result<{course:Course}>>;
