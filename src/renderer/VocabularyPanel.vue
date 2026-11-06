@@ -23,13 +23,13 @@ async function saveEntry(){const value:SupplementalOperation=editing.value?{kind
 function resetEntry(){editing.value=undefined;entry.value={word:'',code:'',level:1};}
 function edit(row:Entry){editing.value={word:row.word,code:row.code};entry.value={...row};}
 async function removeSupplemental(pairs:Pair[]){await run(()=>window.typist.mutateSupplemental(request(pairs.map(pair=>({kind:'delete' as const,pair})))),()=>{status.value='补充词条已删除，生词及课程记录已按最终词库同步。';resetEntry();});}
-async function removeVocabulary(pairs:Pair[],words:string[]=[]){await run(()=>window.typist.deleteVocabulary(request({pairs,words})),value=>{status.value=`已删除 ${value.removedPairs.length} 个生词组合。`;});}
+async function removeVocabulary(pairs:Pair[],words:string[]=[]){await run(()=>window.typist.deleteVocabulary(request({pairs:pairs.map(pair=>({...pair})),words:[...words]})),value=>{status.value=`已删除 ${value.removedPairs.length} 个生词组合。`;});}
 function decode(keys:string[]):Pair[]{return keys.map(k=>{const [word,code]=JSON.parse(k);return {word,code};});}
 onMounted(async()=>{unsubscribe=window.typist.onChanged(()=>{void load();});try{await load();}catch{error.value='无法连接本机数据服务。';}});
 onUnmounted(()=>unsubscribe());
 </script>
 <template>
-<section class="card business">
+<section class="card business" :class="{'settings-section':mode==='supplemental','vocabulary-page':mode==='vocabulary'}">
   <div v-if="error" class="error" role="alert">{{error}} <button @click="error='';load()">重新加载</button></div>
   <p v-if="status" class="success" role="status">{{status}}</p>
   <template v-if="mode==='text'">
@@ -37,27 +37,32 @@ onUnmounted(()=>unsubscribe());
     <template v-else><h2>本次添加结果</h2><p role="status">新增 {{result.addedPairs.length}} 个组合 · 重复 {{result.duplicateOccurrences}} 次</p><ul class="result-list"><li v-for="[word,codes] in added" :key="word"><strong>{{word}}</strong><code>{{codes.join(' · ')}}</code></li></ul><p v-if="!added.length">本次没有新增生词。</p><p v-if="result.unknownDistinct.length">未识别：{{result.unknownDistinct.join('、')}}</p><button class="primary" @click="result=undefined;text=''">继续添加</button></template>
   </template>
   <template v-else>
-    <h2>{{mode==='supplemental'?'补充词库':'生词本'}}</h2>
-    <p>{{mode==='supplemental'?'新增补充词条不会自动加入生词本；内置词库只读。':'按文字聚合全部编码，可删除单个编码或整个文字。'}}</p>
-    <form v-if="mode==='supplemental'" @submit.prevent="saveEntry">
+    <div class="settings-section-heading"><h2>{{mode==='supplemental'?'补充词库':'生词本'}}<span v-if="mode==='vocabulary'" class="vocabulary-total">{{grouped.length}} 个文字</span></h2><p>{{mode==='supplemental'?'新增补充词条不会自动加入生词本；内置词库只读。':'把不熟悉的文字收在这里，让每个编码都更熟悉。'}}</p></div>
+    <form class="settings-form" v-if="mode==='supplemental'" @submit.prevent="saveEntry">
       <label>文字<input v-model="entry.word" :disabled="!!editing" maxlength="200" required aria-label="补充文字"></label>
       <label>编码<input v-model="entry.code" maxlength="20" required aria-label="补充编码"></label>
       <label>分类<select v-model.number="entry.level"><option v-for="(label,i) in labels" :value="i+1">{{label}}</option></select></label>
       <p class="note">一级至四级：单字及对应长度编码；词组：至少两字、1～4 位字母编码。</p>
       <div class="actions"><button class="primary" :disabled="busy||!snapshot">{{editing?'保存修改':'添加词条'}}</button><button v-if="editing" type="button" @click="resetEntry">取消修改</button></div>
     </form>
-    <div class="list-toolbar"><input v-model="query" aria-label="搜索文字或编码" placeholder="搜索文字或编码" @input="offset=0"><span>{{filtered.length}} {{mode==='supplemental'?'个组合':'个文字'}}</span></div>
-    <div class="actions" v-if="mode==='supplemental'"><button :disabled="busy||!selectedPairs.length" @click="removeSupplemental(decode(selectedPairs))">删除选中组合（{{selectedPairs.length}}）</button></div>
-    <div v-else class="actions"><button :disabled="busy||!selectedWords.length" @click="removeVocabulary([],selectedWords)">删除选中文字（{{selectedWords.length}}）</button><button :disabled="busy||!selectedPairs.length" @click="removeVocabulary(decode(selectedPairs))">删除选中编码（{{selectedPairs.length}}）</button></div>
-    <p v-if="!filtered.length">{{query?'没有匹配内容。':'暂无条目。'}}</p>
+    <div v-if="mode==='vocabulary'" class="vocabulary-toolbar">
+      <label class="vocabulary-search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg><input v-model="query" aria-label="搜索文字或编码" placeholder="搜索文字或编码" @input="offset=0"></label>
+      <div class="vocabulary-bulk"><span v-if="query" class="note">找到 {{filtered.length}} 个文字</span><button class="danger" :disabled="busy||!selectedWords.length" @click="removeVocabulary([],selectedWords)">删除选中<span v-if="selectedWords.length">（{{selectedWords.length}}）</span></button></div>
+    </div>
+    <div v-else class="list-toolbar"><input v-model="query" aria-label="搜索文字或编码" placeholder="搜索文字或编码" @input="offset=0"><span>{{filtered.length}} {{mode==='supplemental'?'个组合':'个文字'}}</span></div>
+    <div class="actions" v-if="mode==='supplemental'"><button class="danger" :disabled="busy||!selectedPairs.length" @click="removeSupplemental(decode(selectedPairs))">删除选中组合（{{selectedPairs.length}}）</button></div>
+
+    <p v-if="!filtered.length" :class="{'vocabulary-empty':mode==='vocabulary'}">{{query?'没有匹配内容。':'暂无条目。'}}</p>
     <ul class="entry-list">
       <li v-for="row in visible" :key="'code'in row?key(row):row.word">
         <template v-if="'code'in row">
-          <label class="choice"><input type="checkbox" v-model="selectedPairs" :value="key(row)"><strong>{{row.word}}</strong></label><code>{{row.code}}</code><span>{{labels[row.level-1]}}</span><div class="actions"><button :disabled="busy" @click="edit(row)">修改</button><button :disabled="busy" @click="removeSupplemental([row])">删除</button></div>
+          <label class="choice"><input type="checkbox" v-model="selectedPairs" :value="key(row)"><strong>{{row.word}}</strong></label><code>{{row.code}}</code><span>{{labels[row.level-1]}}</span><div class="actions"><button :disabled="busy" @click="edit(row)">修改</button><button class="danger" :disabled="busy" @click="removeSupplemental([row])">删除</button></div>
         </template>
         <template v-else>
-          <div class="word-heading"><label class="choice"><input type="checkbox" v-model="selectedWords" :value="row.word"><strong>{{row.word}}</strong></label><button :disabled="busy" @click="removeVocabulary([],[row.word])">删除全部编码</button></div>
-          <details><summary>{{row.codes.join(' · ')}}</summary><div v-for="code in row.codes" :key="code" class="code-row"><label class="choice"><input type="checkbox" v-model="selectedPairs" :value="key({word:row.word,code})"><code>{{code}}</code></label><button :disabled="busy" @click="removeVocabulary([{word:row.word,code}])">删除编码</button></div></details>
+          <div class="word-heading">
+            <div class="vocabulary-content"><label class="choice"><input type="checkbox" v-model="selectedWords" :value="row.word" :aria-label="`选择${row.word}`"><strong>{{row.word}}</strong></label><code class="vocabulary-codes" :aria-label="`${row.word} 的编码`">{{row.codes.join(' · ')}}</code></div>
+            <button class="danger vocabulary-delete" :disabled="busy" :aria-label="`删除${row.word}及全部编码`" @click="removeVocabulary([],[row.word])"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 14h10l1-14M10 11v6m4-6v6"/></svg><span>删除</span></button>
+          </div>
         </template>
       </li>
     </ul>

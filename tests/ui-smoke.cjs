@@ -1,15 +1,16 @@
+const { artifactPath, resultsDirectory } = require('./artifacts.cjs');
 const {app,BrowserWindow}=require('electron');
 const assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'typist-ui-'));
 process.env.TYPIST_TEST_USER_DATA=dir;app.setAppPath(path.resolve(__dirname,'..'));
-const checks=[],screenshots=path.resolve('design-docs/validation');let call;
+const checks=[],screenshots=resultsDirectory;let call;
 const timeout=setTimeout(()=>{console.error('UI smoke timed out');app.exit(1);},40000);
 const wait=(ms=160)=>new Promise(r=>setTimeout(r,ms));
 require('../dist/main/index');
 app.whenReady().then(async()=>{try{
  await wait(800);const win=BrowserWindow.getAllWindows()[0];call=code=>win.webContents.executeJavaScript(code);
  const click=selector=>call(`document.querySelector(${JSON.stringify(selector)}).click()`);
- const capture=async name=>{fs.writeFileSync(path.join(screenshots,`ui-redesign-${name}.png`),(await win.webContents.capturePage()).toPNG());};
+ const capture=async name=>{fs.writeFileSync(artifactPath(`desktop-regression-${name}.png`),(await win.webContents.capturePage()).toPNG());};
  const navigate=async target=>{await click('[data-page=home]');await wait();await click(`[data-page=${target}]`);await wait();};
  const phase=()=>call('document.querySelector("[data-testid=phase]").textContent');
  const count=()=>call('Number(document.querySelector("[data-testid=answered]").textContent.replace(/[^0-9]/g,""))');
@@ -18,10 +19,10 @@ app.whenReady().then(async()=>{try{
  const fit=async()=>assert.ok(await call('document.documentElement.scrollWidth<=innerWidth'), 'no horizontal page overflow');
  assert.equal(await call('document.querySelectorAll("aside").length'),0);
  assert.equal(await call('document.querySelectorAll(".home-entries button").length'),3);
- await call('document.querySelector("[data-page=practice]").focus()');await key(' ');assert.ok(await call('!!document.querySelector(".practice-panel").offsetHeight'));
+ await call('document.querySelector("[data-page=practice]").focus()');await key(' ');assert.ok(await call('!!document.querySelector(".practice-panel:not(.game-panel)").offsetHeight'));
  await click('[data-page=home]');await wait();await capture('home');
- await click('[data-page=game]');await wait();assert.ok((await call('document.body.innerText')).includes('即将开放'));await navigate('words');assert.equal(await call('document.querySelector("[aria-label=练习课程]").value'),'vocabulary');assert.ok((await call('document.body.innerText')).includes('暂无可练内容'));
- checks.push('home has no sidebar; keyboard space opens practice; game is a placeholder; vocabulary entry selects existing course and empty state');
+ await click('[data-page=game]');await wait();assert.ok((await call('document.body.innerText')).includes('开始游戏'));await navigate('words');assert.equal(await call('document.querySelector("[aria-label=练习课程]").value'),'vocabulary');assert.ok((await call('document.body.innerText')).includes('暂无可练内容'));
+ checks.push('home has no sidebar; keyboard space opens practice; game entry opens start screen; vocabulary entry selects existing course and empty state');
  await write('mutateSupplemental',[{kind:'add',entry:{word:'𠮷',code:'zz',level:2}},{kind:'add',entry:{word:'𠮷',code:'zzzz',level:4}},{kind:'add',entry:{word:'春风化雨循序渐进生生不息',code:'zz',level:5}},{kind:'add',entry:{word:'学习',code:'xy',level:5}}]);
  await write('addVocabularyText','𠮷，春风化雨循序渐进生生不息，学习');
  await call('window.uiNow=0;Object.defineProperty(performance,"now",{configurable:true,value:()=>window.uiNow});true');

@@ -1,12 +1,13 @@
 <script setup lang="ts">
+import ThemeSwitch from './ThemeSwitch.vue';
 import {computed,nextTick,onMounted,onUnmounted,ref,shallowRef,watch} from 'vue';
 import {Practice} from '../shared/practice';
 import {Session} from '../shared/session';
 import {bindAnswerInput} from '../shared/answer-input';
 import {defaults,type Course,type CourseWord,type Settings,type Snapshot,type Write,type LearningWrite} from '../shared/contracts';
-const props=defineProps<{visible:boolean}>();
+const props=defineProps<{visible:boolean;beforeStart?:()=>Promise<boolean>}>();
 defineEmits<{home:[];'add-text':[]}>();
-defineExpose({openCourse});
+defineExpose({openCourse,isActive:()=>session.active,pause,finish});
 function openCourse(request:Course|'graded'){const next=request==='graded'?lastGradedCourse.value:request;if(next===course.value)return;if(session.active){pause();pending.value={kind:'course',course:next};}else void changeCourse(next);}
 const labels:[Course,string][]=[['1','一级简码'],['2','二级简码'],['3','三级简码'],['4','四级'],['5','词组'],['vocabulary','生词专项']];
 const course=ref<Course>('1'),duration=ref(1),model=shallowRef<Practice>(),phase=ref('idle'),remaining=ref(60000),countdown=ref(3000);
@@ -69,7 +70,7 @@ async function refreshSource(){
   model.value=candidate;if(!candidate.total&&session.active){finish();notice.value='当前课程已无可练内容，本次已结束。';}
 }
 async function begin(){
-  if(loading.value)return;loading.value=true;error.value='';notice.value='';
+  if(loading.value)return;if(props.beforeStart&&!await props.beforeStart())return;loading.value=true;error.value='';notice.value='';
   try{
     await queue;const loaded=await data();
     if(!loaded.items.length){notice.value='当前课程暂无内容，请先添加生词或补充词库。';return;}
@@ -120,6 +121,7 @@ onUnmounted(()=>{mounted=false;clearInterval(timer);resize?.disconnect();dispose
     <button v-if="phase==='paused'" data-action="resume" :disabled="!!error||loading||saving||!!pending" @click="resume">继续</button>
     <button v-if="active" class="back" data-action="finish" @pointerdown.capture="pause" @click="finish">结束本次</button>
     <button v-if="active" class="back restart" data-action="start" :disabled="loading||saving" @click="start">重新开始</button>
+    <ThemeSwitch/>
   </header>
   <main class="practice-body">
     <div v-if="error" class="error" role="alert">{{error}} <button @click="reload">重新加载</button></div>
@@ -145,7 +147,7 @@ onUnmounted(()=>{mounted=false;clearInterval(timer);resize?.disconnect();dispose
   <section class="practice-stats" :aria-label="phase==='ended'?'本次成绩':'本次统计'">
     <div class="stat"><small>速度</small><strong>{{stats?.speed.toFixed(1)??'0.0'}}</strong><span> 字/分钟</span></div>
     <div class="stat"><small>正确率</small><strong>{{stats?.accuracy==null?'—':(stats.accuracy*100).toFixed(1)}}</strong><span v-if="stats?.accuracy!=null"> %</span></div>
-    <div class="stat"><small>已答题数</small><strong data-testid="answered">已答 {{stats?.answered??0}} 题</strong><span class="stat-detail">正确 {{stats?.correct??0}} 题 · {{stats?.correctCharacters??0}} 字</span></div>
+    <div class="stat"><small>已答</small><strong data-testid="answered">{{stats?.answered??0}}</strong><span>题</span><span class="stat-detail">正确 {{stats?.correct??0}} 题 · {{stats?.correctCharacters??0}} 字</span></div>
     <div class="stat coverage"><small>已练过</small><strong>{{counts.covered}} / {{counts.total}}</strong><div class="meter"><span :style="{width:`${counts.total?counts.covered/counts.total*100:0}%`}"></span></div></div>
     <div class="stat mastery"><small>暂时熟练</small><strong>{{counts.mastered}} / {{counts.total}}</strong><div class="meter"><span :style="{width:`${counts.total?counts.mastered/counts.total*100:0}%`}"></span></div></div>
   </section>

@@ -1,6 +1,6 @@
 # 界面设计提案：静墨
 
-2026-10-31。状态：用户已确认设计稿并授权正式实施；此目录保留为原型记录，正式实现及验证见 [改版报告](../../design-docs/validation/ui-redesign-report.md)。
+2026-10-31。状态：用户已确认设计稿并授权正式实施；此目录保留为原型记录，正式实现及验证见 [改版报告](../../test-results/ui-redesign-report.md)。
 
 依据：[界面改版实施文档](../../design-docs/plans/phases/ui-redesign.md)。
 

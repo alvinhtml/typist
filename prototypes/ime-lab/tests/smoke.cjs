@@ -1,3 +1,4 @@
+const { artifactPath } = require('../../../tests/artifacts.cjs');
 const { app, BrowserWindow } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -49,7 +50,7 @@ app.whenReady().then(async()=>{
  return {title:document.title,checks:['mounted','text commit','paste blocked','pause disables input','pause before compositionend discards draft','stale event after resume ignored','new composition accepted','Latin commit retained','compositionend before pause discarded'],userAgent:navigator.userAgent};
  })()`);
  console.log(JSON.stringify({versions:process.versions,result},null,2));
- fs.writeFileSync(path.join(__dirname,'../smoke-result.json'),JSON.stringify({versions:process.versions,result},null,2));
+ fs.writeFileSync(artifactPath('ime-smoke-result.json'),JSON.stringify({versions:process.versions,result},null,2));
  clearTimeout(timeout);app.exit(0);
  }catch(e){console.error(e);app.exit(1)}
 });

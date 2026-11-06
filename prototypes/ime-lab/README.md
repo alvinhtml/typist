@@ -14,4 +14,4 @@
 
 ## 自主验证
 
-`npm run phase0` 执行 Electron SQLite 临时实验、布局与游戏参数检查；`npm run layouts` 打开关键页面样例；`npm run smoke` 运行输入回归。实验不读取用户学习数据。结果与截图写入 design-docs/validation。
+`npm run phase0` 执行 Electron SQLite 临时实验、布局与游戏参数检查；`npm run layouts` 打开关键页面样例；`npm run smoke` 运行输入回归。实验不读取用户学习数据。结果与截图写入 test-results。

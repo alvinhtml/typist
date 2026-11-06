@@ -7,20 +7,29 @@ import { readBuiltin } from './dictionary';
 import type { Changed, VocabularyChange, Result } from '../shared/contracts';
 let store:Store|undefined, startupError:unknown;
 let main:BrowserWindow|null=null, text:BrowserWindow|null=null, tray:Tray|null=null, quitting=false,sessionActive=false,confirmingQuit=false;
+const pendingHide=new WeakSet<BrowserWindow>();
 const page=join(__dirname,'../renderer/index.html');
 const allowed=pathToFileURL(page).href;
 // A test process may select a disposable directory without touching the user's data.
 if(process.env.TYPIST_TEST_USER_DATA) app.setPath('userData',process.env.TYPIST_TEST_USER_DATA);
 function windowFor(kind:'main'|'text') {
   const current=kind==='main'?main:text;
-  if(current&&!current.isDestroyed()){current.show();if(current.isMinimized())current.restore();current.focus();return current;}
+  if(current&&!current.isDestroyed()){pendingHide.delete(current);current.show();if(current.isMinimized())current.restore();current.focus();return current;}
   const win=new BrowserWindow({width:kind==='main'?1100:480,height:780,minWidth:kind==='main'?760:420,minHeight:640,show:false,webPreferences:{preload:join(__dirname,'../preload/index.js'),contextIsolation:true,sandbox:true,nodeIntegration:false}});
   if(kind==='main')main=win;else text=win;
   win.webContents.on('did-start-loading',()=>{if(kind==='main')sessionActive=false;});
   win.webContents.on('render-process-gone',()=>{if(kind==='main')sessionActive=false;});
   win.webContents.setWindowOpenHandler(()=>({action:'deny'}));
   win.webContents.on('will-navigate',e=>e.preventDefault());
-  win.on('close',e=>{if(!quitting){e.preventDefault();win.webContents.send('pause');win.hide();}});
+  // Native macOS fullscreen transitions must finish before hiding the window.
+  win.on('leave-full-screen',()=>{if(pendingHide.delete(win)&&!win.isDestroyed())win.hide();});
+  win.on('enter-full-screen',()=>{if(pendingHide.has(win))win.setFullScreen(false);});
+  win.on('close',e=>{if(!quitting){
+    e.preventDefault();win.webContents.send('pause');
+    if(process.platform==='darwin'&&win.isFullScreen()){
+      pendingHide.add(win);win.setFullScreen(false);
+    }else win.hide();
+  }});
   win.on('minimize',()=>win.webContents.send('pause'));
   win.on('blur',()=>{
     // Candidate panels may transiently change focus without deactivating this macOS app.

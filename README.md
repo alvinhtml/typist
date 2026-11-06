@@ -42,8 +42,19 @@ npm run make
 
 关闭窗口会隐藏到托盘。托盘菜单可恢复主窗口、打开文本窗口或退出。
 
-项目规则见 [AGENTS.md](AGENTS.md)，当前进度见 [设计文档](design-docs/state/current.md)，实际验证与限制见 [阶段 3 报告](design-docs/validation/phase3-report.md)。
+项目规则见 [AGENTS.md](AGENTS.md)，当前进度见 [设计文档](design-docs/state/current.md)，实际验证与限制见 [阶段 3 报告](test-results/phase3-report.md)。
 
 ## 练习
 
 在“分级练习”选择一级至四级、词组或“生词专项”，选择时长后开始。固定3秒准备；完整文字一次判定，直接空格跳过，作答框拒绝粘贴。显示批次按窗口宽度自适应，组内题序不因缩放改变。暂停、离页、最小化或切换应用后需手动继续。关闭收到托盘，重启保留课程进度和组，不保留本局现场或成绩。
+
+## 测试产物
+
+截图、报告和临时结果统一放在根目录 `test-results/`（Git 忽略，可删除，脚本自动创建）。需要保存命令日志时，可运行：
+
+```sh
+mkdir -p test-results
+npm test > test-results/tests.log 2>&1
+```
+
+测试用的隔离数据库和用户目录仍使用系统临时目录并在退出后清理，避免混入实际学习数据。

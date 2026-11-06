@@ -1,10 +1,11 @@
+const { resultsDirectory } = require('../../../tests/artifacts.cjs');
 const {app,BrowserWindow}=require('electron');const fs=require('node:fs'),path=require('node:path');
 app.setPath('userData',path.join(app.getPath('temp'),'typist-phase0'));
 app.whenReady().then(async()=>{let win;try{
  require('../experiments/storage.cjs');
  win=new BrowserWindow({show:false,width:1100,height:780,webPreferences:{backgroundThrottling:false,sandbox:true,contextIsolation:true,nodeIntegration:false}});
  await win.loadFile(path.join(__dirname,'../dist/layouts.html'));
- const report=[];const out=path.resolve(__dirname,'../../../design-docs/validation');fs.mkdirSync(out,{recursive:true});
+ const report=[];const out=resultsDirectory;fs.mkdirSync(out,{recursive:true});
  for(const width of [1100,760,480]){win.setSize(width,780);await new Promise(r=>setTimeout(r,100));
  for(const name of ['练习反馈','文本添加','添加结果','设置','游戏参数']){
  await win.webContents.executeJavaScript(`Array.from(document.querySelectorAll('nav button')).find(b=>b.textContent===${JSON.stringify(name)}).click()`);await new Promise(r=>setTimeout(r,100));
