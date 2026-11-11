@@ -9,7 +9,7 @@ const props=defineProps<{visible:boolean;beforeStart?:()=>Promise<boolean>}>();
 defineEmits<{home:[];'add-text':[]}>();
 defineExpose({openCourse,isActive:()=>session.active,pause,finish});
 function openCourse(request:Course|'graded'){const next=request==='graded'?lastGradedCourse.value:request;if(next===course.value)return;if(session.active){pause();pending.value={kind:'course',course:next};}else void changeCourse(next);}
-const labels:[Course,string][]=[['1','一级简码'],['2','二级简码'],['3','三级简码'],['4','四级'],['5','词组'],['vocabulary','生词专项']];
+const labels:[Course,string][]=[['1','一级简码'],['2','二级简码'],['3','三级简码'],['4','四级简码'],['5','词组'],['vocabulary','生词专项']];
 const course=ref<Course>('1'),duration=ref(1),model=shallowRef<Practice>(),phase=ref('idle'),remaining=ref(60000),countdown=ref(3000);
 const error=ref(''),notice=ref(''),loading=ref(false),saving=ref(false),input=ref<HTMLInputElement>(),grid=ref<HTMLElement>(),gridWidth=ref(600),inputKey=ref(0),revision=ref(0),preview=ref({total:0,covered:0,mastered:0});
 const answerFocused=ref(false),lastGradedCourse=ref<Course>('1');
@@ -127,7 +127,7 @@ onUnmounted(()=>{mounted=false;clearInterval(timer);resize?.disconnect();dispose
     <div v-if="error" class="error" role="alert">{{error}} <button @click="reload">重新加载</button></div>
     <p v-if="notice" role="status" class="note">{{notice}}</p>
     <div class="round-header"><p v-if="model" class="note">第 {{model.roundNumber}} 轮 · 本组 {{model.group.length}} 题 · 连续正确 {{model.settings.threshold}} 次暂时熟练</p><span v-else class="eyebrow">{{course==='vocabulary'?'生词专项':'分级练习'}}</span><span class="phase" data-testid="phase" role="status">{{phase==='countdown'?`准备 ${Math.ceil(countdown/1000)}`:phase==='paused'?'已暂停':phase==='running'?'练习中':phase==='ended'?'本次结束':'未开始'}}</span></div>
-    <div v-if="!model" class="empty-state"><h1>{{counts.total?'从这一组开始':'暂无可练内容'}}</h1><p>{{counts.total?'接续已有学习进度，每一次输入都更熟悉一点。':'添加生词或补充词库后，再回来练习。'}}</p><button v-if="counts.total" class="primary" data-action="start" :disabled="loading||saving" @click="start">{{loading?'准备中…':'开始练习 →'}}</button><button v-else class="primary" @click="$emit('add-text')">添加文本 →</button></div>
+    <div v-if="!model" class="empty-state"><h1>{{counts.total?'给专注，几分钟。':'暂无可练内容'}}</h1><p>{{counts.total?'接续已有学习进度，每一次输入都更熟悉一点。':'添加生词或补充词库后，再回来练习。'}}</p><button v-if="counts.total" class="primary" data-action="start" :disabled="loading||saving" @click="start">{{loading?'准备中…':'开始练习 →'}}</button><button v-else class="primary" @click="$emit('add-text')">添加文本 →</button></div>
     <div v-if="phase==='countdown'" class="countdown" aria-live="polite"><strong>{{Math.ceil(countdown/1000)}}</strong><p>切换至英文状态，双手放在键盘上</p></div>
     <div v-if="model&&phase!=='ended'" ref="grid" class="practice-grid" aria-label="本轮题目" :class="{paused:phase==='paused'||phase==='countdown'}">
       <div v-for="{word,index:i,width} in visibleQuestions" :key="word" class="question-cell" :style="{width:`${width}px`}" :class="{current:i===model.position,future:i>model.position}" :data-current="i===model.position?word:undefined">
@@ -140,7 +140,7 @@ onUnmounted(()=>{mounted=false;clearInterval(timer);resize?.disconnect();dispose
     </div>
     <p v-if="model&&phase==='running'" class="answer-label">{{answerFocused?'英文状态逐键输入编码 · 短码按空格提交 · 空码空格跳过':'作答区未聚焦 · 点击当前题下方继续输入'}}</p>
     <div v-if="phase==='paused'" class="pause-message"><p>题目与进度已保留，继续后可直接输入。</p><button class="primary" :disabled="!!error||loading||saving||!!pending" @click="resume">继续练习 →</button></div>
-    <div v-if="phase==='ended'" class="empty-state"><h1>每一次输入，都更熟悉一点</h1><p>本次练习已结束，学习进度已保留。</p><button class="primary" data-action="start" :disabled="loading||saving" @click="start">再练一次 →</button></div>
+    <div v-if="phase==='ended'" class="empty-state"><h1>每一次，都更熟悉一点。</h1><p>本次练习已结束，学习进度已保留。</p><button class="primary" data-action="start" :disabled="loading||saving" @click="start">再练一次 →</button></div>
     <p v-if="saving" class="note" role="status">正在保存学习进度…</p>
     <details v-if="model?.previousFeedback.length" class="previous-round"><summary>上一轮作答</summary><div class="practice-grid"><div v-for="(f,i) in model.previousFeedback" :key="i" class="question-cell"><strong class="question-word">{{f.word}}</strong><small class="answer-code">{{f.correct?'\u00a0':f.codes.join(' · ')}}</small><span class="answer-feedback" :class="f.correct?'correct':'incorrect'">{{f.answer||'\u00a0'}}</span></div></div></details>
   </main>

@@ -396,3 +396,123 @@ option{background:var(--surface);color:var(--ink)}
 .vocabulary-delete svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
 .vocabulary-empty{text-align:center;margin:0;padding:64px 20px;border-block:1px solid var(--line)}
 @media(max-width:480px){.vocabulary-search{width:100%}.vocabulary-page .word-heading{gap:12px}.vocabulary-delete span{display:none}.vocabulary-content{gap:8px}.vocabulary-codes{margin-left:27px}}
+
+/* Type Studio — approved 2026-11-11. The earlier rules above retain input geometry. */
+:root{--paper:#f2eee5;--surface:#fffcf5;--surface-raised:#fffcf5;--surface-inset:#e8e6db;--ink:#292a25;--muted:#707166;--quiet:#858578;--line:#d8d5c9;--line-strong:#b9b6a8;--accent:#bd472d;--accent-soft:#f3e6dc;--accent-line:#dbad9b;--on-accent:#fffaf2;--correct:#387052;--error:#ad382b;--error-soft:#f7e3dc;--hover:#e8e6db;--overlay:#fffcf5f2;--scrim:#292a2566;--focus:#bd472d33;--glow:#bd472d10;--shadow:none;--shadow-float:0 14px 40px #292a2518}
+
+:root[data-theme=dark]{--paper:#24231f;--surface:#302e28;--surface-raised:#39372f;--surface-inset:#3b3a31;--ink:#f3eee3;--muted:#b3b0a1;--quiet:#aaa594;--line:#48463c;--line-strong:#686456;--accent:#f28b68;--accent-soft:#49342b;--accent-line:#86533f;--on-accent:#29231c;--correct:#90c6a4;--error:#ffa08b;--error-soft:#4c302a;--hover:#3b3a31;--overlay:#302e28f2;--scrim:#00000088;--focus:#f28b6833;--glow:#f28b6810;--shadow:none;--shadow-float:0 14px 40px #00000040}
+
+body{font-size:14px}
+.shell{min-height:100dvh}
+.studio-header{display:flex;align-items:center;gap:25px;padding:18px 32px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.studio-logo{font:bold 29px Georgia,serif;letter-spacing:-1.8px;border:0;background:transparent;padding:0;box-shadow:none}
+.studio-logo span{color:var(--accent)}
+.studio-header nav{display:flex;gap:5px;flex:1;flex-wrap:wrap}
+.studio-header nav button{border:0;background:transparent;box-shadow:none;color:var(--muted)}
+.studio-header nav button.selected{background:var(--ink);color:var(--paper)}
+.studio-edition,.studio-kicker{font:11px/1.5 ui-monospace,monospace;letter-spacing:1px;color:var(--muted)}
+.studio-home{width:min(1060px,100%);margin:0 auto;flex:1;padding:38px 40px}
+.studio-intro{margin-bottom:28px}
+h1,.settings-intro h1{font:500 44px/1.25 "Songti SC",STSong,SimSun,serif;letter-spacing:-1.5px;margin:10px 0 20px}
+.studio-hero{display:grid;grid-template-columns:1.05fr 1fr;min-height:320px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.studio-hero-copy{padding:35px}
+.studio-tag{display:inline-block;background:var(--paper);padding:4px 8px;color:var(--accent);font:11px monospace;border-radius:3px}
+.studio-hero h2{font:500 31px "Songti SC",STSong,serif;margin:16px 0 18px}
+.studio-hero-copy .note{margin-top:18px;margin-bottom:0}
+.studio-art{display:grid;place-items:center;position:relative;overflow:hidden;min-height:300px;background:var(--surface-inset)}
+.studio-orbit{position:absolute;width:230px;height:230px;border:1px solid var(--line);border-radius:50%}
+.studio-orbit:before{content:'';position:absolute;inset:28px;border:1px solid var(--line);border-radius:50%}
+.studio-key{background:var(--surface);border:1px solid var(--line);box-shadow:0 7px 0 var(--line);border-radius:13px;width:110px;height:120px;position:absolute;left:17%;top:24%;transform:rotate(-13deg);display:flex;flex-direction:column;justify-content:center;align-items:center;font:65px "Songti SC",serif}
+.studio-key small{font:11px monospace;margin-top:4px}
+.studio-key.red{left:51%;top:39%;transform:rotate(12deg);font:48px Georgia,serif;background:var(--accent);color:var(--on-accent)}
+.studio-tiles{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+.studio-tile{display:flex;gap:20px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);padding:24px;border-radius:12px}
+.tile-symbol{font:36px Georgia,serif;color:var(--accent)}
+.studio-tile strong{display:block;font-size:17px;font-weight:500}
+.studio-tile small{display:block;color:var(--muted);font-size:12px;margin-top:5px}
+.tile-arrow{margin-left:auto;font-size:22px}
+.studio-courses{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:28px 0}
+.studio-courses button{text-align:left;padding:24px;background:var(--surface);border-radius:10px}
+.studio-courses b{font:38px Georgia,serif;color:var(--accent);display:block;margin-bottom:20px}
+.studio-courses strong{display:block;font-size:17px;font-weight:500}
+.studio-courses small{display:block;color:var(--muted);margin-top:8px;font-size:12px}
+
+.practice-panel:not(.game-panel){width:min(1060px,100%);margin:30px auto;padding:0 40px 30px;flex:1}
+.practice-panel:not(.game-panel) .practice-options{border:1px solid var(--line);border-radius:12px 12px 0 0;padding:16px 24px;background:var(--surface)}
+.practice-panel:not(.game-panel) .practice-body{background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;padding:30px 24px;min-height:340px}
+.practice-panel:not(.game-panel) .practice-stats{border:0;background:transparent;padding:0;margin-top:18px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.practice-panel:not(.game-panel) .stat{padding:16px 20px;background:var(--surface-inset);border-radius:9px;white-space:normal;flex-wrap:wrap;gap:5px 8px}
+.practice-panel:not(.game-panel) .stat small{width:100%;font-size:12px}
+.practice-panel:not(.game-panel) .stat strong{font:29px/1.5 Georgia,serif}
+.practice-panel:not(.game-panel) .stat.coverage{margin-left:0}
+.practice-panel:not(.game-panel) .stat.coverage,.practice-panel:not(.game-panel) .stat.mastery{background:transparent;padding:8px 0}
+.practice-panel:not(.game-panel) .stat.coverage strong,.practice-panel:not(.game-panel) .stat.mastery strong{font:16px ui-monospace,monospace}
+.question-word{font-family:"Songti SC",STSong,SimSun,serif}
+.question-cell.current{background:var(--paper);border-radius:9px}
+.question-cell.current:after{bottom:0;left:0;right:0;border-radius:3px}
+.question-cell.future .question-word{color:var(--ink)}
+.empty-state h1{font:500 36px/1.35 "Songti SC",STSong,serif}
+.practice-options .theme-switch{display:none}
+
+.management{width:min(1060px,100%);padding:38px 40px}
+.management>.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:30px}
+.management input,.management select{background:var(--surface)}
+.management textarea{background:var(--paper);min-height:240px;line-height:2}
+.text-page h1{font-size:36px}
+.vocabulary-page .settings-section-heading h2{font:500 36px/1.4 "Songti SC",STSong,serif}
+.vocabulary-codes{background:var(--surface-inset);color:var(--ink)}
+.vocabulary-content .choice strong{font:26px "Songti SC",STSong,serif}
+.settings-page{display:grid;grid-template-columns:170px minmax(0,1fr);gap:24px 30px;align-content:start}
+.settings-intro{grid-column:1/-1;margin-bottom:5px}
+.settings-tabs{display:flex;flex-direction:column;gap:8px;align-items:stretch}
+.settings-tabs button{border:0;text-align:left;background:transparent;box-shadow:none}
+.settings-tabs .selected{background:var(--surface-inset);color:var(--accent)}
+.settings-content{min-width:0;padding:28px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.settings-page .settings-section{display:block;border:0;border-radius:0;padding:0;box-shadow:none;background:transparent;margin:0}
+.settings-page .settings-section+.settings-section{padding:0;margin:0}
+.settings-section-heading{margin-bottom:22px}
+.settings-page .settings-section>.settings-form,.settings-page .exchange-content{margin-top:22px}
+.settings-page .settings-section-heading h2{font-size:21px}
+.settings-page .business .list-toolbar{margin-top:24px}
+.game-panel{height:calc(100dvh - 90px)!important;min-height:440px!important;padding:20px 32px 0}
+.game-body{background:var(--ink);color:var(--paper);border-radius:12px}
+.game-target{padding:12px!important}
+.game-target strong{display:inline-block;padding:10px 18px;background:var(--paper);color:var(--ink);border-radius:9px;font-family:"Songti SC",serif!important}
+.game-panel .practice-options{border:0;background:transparent;padding:0 0 18px}
+.game-panel .practice-stats{background:transparent;border:0;padding:16px 0}
+.game-overlay{color:var(--ink)}
+.compact .management{width:100%;padding:24px}
+.compact .text-page h1{font-size:30px}
+.compact .management>.card{padding:22px}
+.compact .studio-header{padding:18px 24px}
+.app-footer{margin:0 40px}
+
+@media(max-width:800px){.studio-header{gap:12px;padding:16px 24px}
+.studio-edition{display:none}
+.studio-home,.management{padding:28px 24px}
+.studio-courses{grid-template-columns:repeat(2,minmax(0,1fr))}
+.practice-panel:not(.game-panel){padding:0 24px 24px;margin-top:24px}
+.settings-page{grid-template-columns:1fr}
+.settings-tabs{flex-direction:row;flex-wrap:wrap}
+.settings-content{padding:24px}
+.game-panel{padding:16px 24px 0;height:calc(100dvh - 90px)!important}
+.studio-hero-copy{padding:28px}
+.studio-tile{gap:12px;padding:20px}
+.studio-tile strong{font-size:15px}
+}
+
+@media(max-width:600px){.studio-hero,.studio-tiles{grid-template-columns:1fr}
+.studio-art{min-height:260px}
+.studio-header nav{order:3;flex-basis:100%}
+.studio-header nav button{padding:8px 12px}
+.studio-header .theme-switch{margin-left:auto}
+h1,.settings-intro h1{font-size:34px}
+.studio-courses{grid-template-columns:1fr}
+.practice-panel:not(.game-panel) .practice-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.practice-panel:not(.game-panel) .practice-body{padding:24px 16px}
+.practice-panel:not(.game-panel) .practice-options{padding:14px}
+.game-panel{height:calc(100dvh - 135px)!important}
+.studio-tile strong{font-size:17px}
+.management>.card{padding:22px}
+.text-page h1,.vocabulary-page .settings-section-heading h2{font-size:30px}
+}

@@ -29,15 +29,15 @@ onMounted(async()=>{unsubscribe=window.typist.onChanged(()=>{void load();});try{
 onUnmounted(()=>unsubscribe());
 </script>
 <template>
-<section class="card business" :class="{'settings-section':mode==='supplemental','vocabulary-page':mode==='vocabulary'}">
+<section class="card business" :class="{'settings-section':mode==='supplemental','vocabulary-page':mode==='vocabulary','text-page':mode==='text'}">
   <div v-if="error" class="error" role="alert">{{error}} <button @click="error='';load()">重新加载</button></div>
   <p v-if="status" class="success" role="status">{{status}}</p>
   <template v-if="mode==='text'">
-    <template v-if="!result"><h2>积累想练习的文字</h2><p>粘贴后点击添加，按最长词组优先识别，全部编码保留。</p><form @submit.prevent="add"><textarea v-model="text" aria-label="添加文本" placeholder="粘贴或输入文字" rows="9" maxlength="100000"></textarea><button class="primary" :disabled="busy||!snapshot||!text.trim()">{{busy?'添加中…':'添加到生词本'}}</button></form></template>
+    <template v-if="!result"><span class="studio-kicker">CAPTURE &amp; KEEP</span><h1>遇见生词，留下它。</h1><p>优先识别最长词组，单字兜底。重复添加保留学习进度。</p><form @submit.prevent="add"><textarea v-model="text" aria-label="添加文本" placeholder="粘贴一段文字，或写下刚刚遇见的词…" rows="9" maxlength="100000"></textarea><button class="primary" :disabled="busy||!snapshot||!text.trim()">{{busy?'添加中…':'添加到生词本'}}</button></form></template>
     <template v-else><h2>本次添加结果</h2><p role="status">新增 {{result.addedPairs.length}} 个组合 · 重复 {{result.duplicateOccurrences}} 次</p><ul class="result-list"><li v-for="[word,codes] in added" :key="word"><strong>{{word}}</strong><code>{{codes.join(' · ')}}</code></li></ul><p v-if="!added.length">本次没有新增生词。</p><p v-if="result.unknownDistinct.length">未识别：{{result.unknownDistinct.join('、')}}</p><button class="primary" @click="result=undefined;text=''">继续添加</button></template>
   </template>
   <template v-else>
-    <div class="settings-section-heading"><h2>{{mode==='supplemental'?'补充词库':'生词本'}}<span v-if="mode==='vocabulary'" class="vocabulary-total">{{grouped.length}} 个文字</span></h2><p>{{mode==='supplemental'?'新增补充词条不会自动加入生词本；内置词库只读。':'把不熟悉的文字收在这里，让每个编码都更熟悉。'}}</p></div>
+    <div class="settings-section-heading"><h2>{{mode==='supplemental'?'补充词库':'生词本'}}<span v-if="mode==='vocabulary'" class="vocabulary-total">{{grouped.length}} 个文字</span></h2><p>{{mode==='supplemental'?'新增补充词条不会自动加入生词本；内置词库只读。':'那些值得再练的字，收在这里。保留全部有效编码。'}}</p></div>
     <form class="settings-form" v-if="mode==='supplemental'" @submit.prevent="saveEntry">
       <label>文字<input v-model="entry.word" :disabled="!!editing" maxlength="200" required aria-label="补充文字"></label>
       <label>编码<input v-model="entry.code" maxlength="20" required aria-label="补充编码"></label>

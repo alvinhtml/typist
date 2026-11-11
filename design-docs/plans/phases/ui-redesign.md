@@ -1,3 +1,5 @@
+> 2026-11-11：用户确认 Type Studio 全新界面并授权实施，现行视觉见 [界面规范](../../requirements/interface-design.md)。下方旧界面描述保留为历史，不再约束新版视觉。
+
 # 界面改版实施文档
 
 > 2026-10-31 后续升级：用户要求Linear/Raycast品质与明暗主题，已实现统一视觉系统。现行规范见 [界面设计](../../requirements/interface-design.md)，结果见 [验证记录](../../../test-results/desktop-ui-report.md)。下文为此前静墨改版的范围与历史流程；游戏已实现，按后续游戏需求执行。
