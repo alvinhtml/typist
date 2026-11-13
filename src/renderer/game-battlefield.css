@@ -1,0 +1,150 @@
+.game-arena {
+  position: absolute;
+  inset: 0;
+  background: #050c16 center bottom / cover;
+  overflow: hidden;
+  isolation: isolate;
+}
+.asteroids {
+  position: absolute;
+  inset: auto auto -2% 0;
+  width: min(76%, 1050px);
+  opacity: .78;
+  animation: foreground-drift 24s ease-in-out infinite alternate;
+}
+.flight-area {
+  position: absolute;
+  inset: clamp(118px, 19vh, 174px) 0 clamp(216px, 33vh, 316px);
+  container-type: size;
+  --player-width: clamp(146px, min(24vw, 31vh), 265px);
+  --player-offset: clamp(87px, 13vh, 120px);
+  --muzzle-offset: calc(var(--player-width) * .40);
+}
+.defense-line {
+  position: absolute;
+  top: calc(100% - 17px);
+  left: 0;
+  width: 100%;
+  height: 100px;
+  opacity: .78;
+  animation: shield-flow 3.8s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.defense-line[data-defense="damaged"] { filter: hue-rotate(16deg) saturate(.72); opacity: .60; }
+.defense-line[data-defense="critical"] { filter: hue-rotate(140deg) saturate(1.25); opacity: .67; }
+.atlas { position: absolute; display: block; aspect-ratio: 1; background-size: 400% 200%; background-repeat: no-repeat; pointer-events: none; }
+.player {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: calc(100% + var(--player-offset));
+  width: var(--player-width);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) rotate(atan2(var(--dx, 0px), var(--dy, 1px)));
+  transition: transform 110ms ease-out;
+}
+.player-ship, .enemy-hull img { position: absolute; inset: 0; width: 100%; pointer-events: none; }
+.exhaust {
+  width: 65%;
+  top: 52%;
+  left: 9%;
+  transform-origin: center 20%;
+  animation: thrust 440ms ease-in-out infinite alternate;
+}
+.exhaust + .exhaust { left: 26%; animation-delay: -230ms; }
+.muzzle { width: 49%; left: 25.5%; top: -18%; mix-blend-mode: screen; }
+.game-target {
+  position: absolute;
+  z-index: 2;
+  width: 22cqw;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  --hull: min(16cqw, 18vh, 164px);
+  --health: #ff6d79;
+}
+.game-target[data-kind="armored"] { --hull: min(18cqw, 21vh, 190px); --health: #c3a4ff; }
+.game-target[data-kind="heavy"] { --hull: min(21cqw, 24vh, 230px); --health: #ffb769; }
+.game-target[data-kind="reward"] { --hull: min(14cqw, 17vh, 150px); --health: #65ffa9; }
+.enemy-hull {
+  position: absolute;
+  width: var(--hull);
+  aspect-ratio: 1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(180deg);
+}
+.enemy-hull .exhaust { width: 52%; top: 52%; left: 12%; filter: hue-rotate(55deg); }
+.enemy-hull .exhaust + .exhaust { left: 37%; }
+[data-kind="scout"] .exhaust { filter: hue-rotate(105deg); }
+[data-kind="heavy"] .exhaust { filter: hue-rotate(172deg); }
+[data-kind="reward"] .exhaust { filter: hue-rotate(285deg); }
+.enemy-damage { width: 39%; left: 22%; top: 40%; opacity: .86; }
+.enemy-smoke { width: 64%; left: 5%; top: 56%; opacity: .38; animation: smoke-drift 1.1s ease-out infinite; }
+.enemy-smoke.severe { opacity: .79; width: 84%; }
+.enemy-core {
+  z-index: 1;
+  display: grid;
+  max-width: 100%;
+  padding: 1px;
+  filter: drop-shadow(0 0 5px #36d7ff);
+}
+.enemy-core strong {
+  min-width: 50px;
+  padding: 7px 12px;
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+  background: #7cefff;
+  color: #edfdff;
+  text-shadow: 0 0 8px #45d4ff;
+  font: 700 clamp(15px, 2.1vw, 25px)/1.25 system-ui, sans-serif;
+  overflow-wrap: anywhere;
+  position: relative;
+  isolation: isolate;
+}
+.enemy-core strong::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  clip-path: inherit;
+  background: linear-gradient(155deg, #154e67, #061927 65%, #0d354a);
+}
+.enemy-hp {
+  position: absolute;
+  top: calc(50% + var(--hull) * .38);
+  display: flex;
+  gap: 2px;
+  background: #040d16;
+  border: 1px solid #698296;
+  padding: 3px 4px;
+  border-radius: 4px;
+}
+.enemy-hp i { width: 15px; height: 4px; border-radius: 1px; background: var(--health); box-shadow: 0 0 4px var(--health); }
+.enemy-hp i.depleted { background: #273c4e; box-shadow: none; }
+.shot, .shield-impact, .shot-points { position: absolute; transform: translate(-50%, -50%); z-index: 3; pointer-events: none; }
+.shot { width: clamp(74px, 13vw, 152px); }
+.shot.blast { width: clamp(112px, 18vw, 215px); }
+.shot.blast.large { width: clamp(155px, 24vw, 285px); }
+.shot.blast, .shield-impact { mask-image: radial-gradient(closest-side, black 70%, transparent 100%); }
+.shot.bullet {
+  width: clamp(45px, 7vw, 80px);
+  transform: translate(-50%, -50%) rotate(atan2(var(--dx), var(--dy)));
+  mix-blend-mode: screen;
+}
+.shot.bullet.piercing { width: clamp(60px, 9vw, 105px); }
+.shield-impact { width: clamp(105px, 17vw, 210px); mix-blend-mode: screen; }
+.shot-points { color: #ffdb98; font: 800 clamp(16px, 2.4vw, 29px)/1 ui-monospace, monospace; text-shadow: 0 2px 5px #281405, 0 0 12px #e1812c; }
+@keyframes thrust { from { transform: scaleY(.87); opacity: .75; } to { transform: scaleY(1.10); opacity: 1; } }
+@keyframes shield-flow { from { filter: brightness(.85); } to { filter: brightness(1.18); } }
+@keyframes foreground-drift { to { transform: translate(1.4%, -2%); } }
+@keyframes smoke-drift { from { transform: scale(.82); } to { transform: translateY(20%) scale(1.12); opacity: .2; } }
+.game-arena:not(.is-running) :is(.exhaust, .asteroids, .defense-line, .enemy-smoke) { animation-play-state: paused; }
+.game-arena:not(.is-running) .player { transition: none; }
+.defense-line:not([data-defense="normal"]) { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .game-arena :is(.exhaust, .asteroids, .defense-line, .enemy-smoke) { animation: none; }
+  .player { transition: none; }
+}
+.player .exhaust { width: 54%; left: 14.5%; }
+.player .exhaust + .exhaust { left: 31.5%; }

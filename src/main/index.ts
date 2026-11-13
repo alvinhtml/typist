@@ -11,10 +11,14 @@ const pendingHide=new WeakSet<BrowserWindow>();
 const page=join(__dirname,'../renderer/index.html');
 const allowed=pathToFileURL(page).href;
 // A test process may select a disposable directory without touching the user's data.
-if(process.env.TYPIST_TEST_USER_DATA) app.setPath('userData',process.env.TYPIST_TEST_USER_DATA);
+const testUserData=process.env.TYPIST_TEST_USER_DATA;
+const hiddenTest=Boolean(testUserData)&&process.env.TYPIST_TEST_HIDDEN==='1';
+if(testUserData) app.setPath('userData',testUserData);
 function windowFor(kind:'main'|'text') {
   const current=kind==='main'?main:text;
-  if(current&&!current.isDestroyed()){pendingHide.delete(current);current.show();if(current.isMinimized())current.restore();current.focus();return current;}
+  if(current&&!current.isDestroyed()){pendingHide.delete(current);
+    if(!hiddenTest){current.show();if(current.isMinimized())current.restore();current.focus();}
+    return current;}
   const win=new BrowserWindow({width:kind==='main'?1100:480,height:780,minWidth:kind==='main'?760:420,minHeight:640,show:false,webPreferences:{preload:join(__dirname,'../preload/index.js'),contextIsolation:true,sandbox:true,nodeIntegration:false}});
   if(kind==='main')main=win;else text=win;
   win.webContents.on('did-start-loading',()=>{if(kind==='main')sessionActive=false;});
@@ -37,7 +41,7 @@ function windowFor(kind:'main'|'text') {
     check();setTimeout(check,20);
   });
   win.on('closed',()=>{if(kind==='main')main=null;else text=null;});
-  void win.loadFile(page,{hash:kind==='text'?'text':'practice'}).then(()=>win.show());
+  void win.loadFile(page,{hash:kind==='text'?'text':'practice'}).then(()=>{if(!hiddenTest&&!win.isDestroyed())win.show();});
   return win;
 }
 async function quit(){

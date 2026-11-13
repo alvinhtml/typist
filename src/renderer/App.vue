@@ -34,18 +34,18 @@ onMounted(async()=>{cleanup=window.typist.onChanged(()=>{void load();});await lo
 onUnmounted(()=>cleanup());
 </script>
 <template>
-  <div class="shell" :class="{compact,'practice-shell':page==='practice'||page==='game'}">
-    <header class="studio-header" v-if="!compact">
+  <div class="shell" :class="{compact,'game-shell':page==='game','practice-shell':page==='practice'||page==='game'}">
+    <header class="studio-header" v-if="!compact && page!=='game'">
       <button class="studio-logo" data-page="home" @click="navigate('home')">typist<span>.</span></button>
       <nav aria-label="主导航"><button :class="{selected:['home','courses','practice','game'].includes(page)}" @click="navigate('home')">练习室</button><button data-page="vocabulary" :class="{selected:page==='vocabulary'}" @click="navigate('vocabulary')">生词本</button><button data-page="text" :class="{selected:page==='text'}" @click="navigate('text')">收集文字</button><button data-page="settings" :class="{selected:page==='settings'}" @click="navigate('settings')">设置</button></nav>
       <span class="studio-edition">WUBI 86<br>OFFLINE FIRST</span><ThemeSwitch/>
     </header>
-    <header v-else class="studio-header"><div class="studio-logo">typist<span>.</span></div><ThemeSwitch/></header>
-    <div v-if="error" role="alert" class="error app-notice">{{error}} <button @click="error='';load()">重新加载</button></div><p v-if="status" role="status" class="success app-notice">{{status}}</p>
+    <header v-else-if="compact" class="studio-header"><div class="studio-logo">typist<span>.</span></div><ThemeSwitch/></header>
+    <div v-if="page!=='game' && error" role="alert" class="error app-notice">{{error}} <button @click="error='';load()">重新加载</button></div><p v-if="page!=='game' && status" role="status" class="success app-notice">{{status}}</p>
     <main v-if="page==='home'" class="studio-home">
       <div class="studio-intro"><span class="studio-kicker">YOUR DAILY TYPE STUDIO</span><h1>从生疏，到自如。</h1></div>
       <div class="studio-hero"><div class="studio-hero-copy"><span class="studio-tag">01 / PRACTICE</span><h2>手指，也有记忆。</h2><p>从简码到词组，循序渐进。<br>留几分钟，让文字在指尖流动。</p><button class="primary" data-page="practice" @click="navigate('courses')">选择课程　↗</button><p class="note">五类课程 · 1–5 分钟 · 本机保存进度</p></div><div class="studio-art" aria-hidden="true"><div class="studio-orbit"></div><div class="studio-key">字<small>CHARACTER</small></div><div class="studio-key red">A<small>KEYSTROKE</small></div></div></div>
-      <nav class="studio-tiles" aria-label="练习入口"><button class="studio-tile" data-page="words" @click="navigate('practice','vocabulary')"><span class="tile-symbol">Aa</span><span><strong>只练，还不熟的。</strong><small>生词专项 · 从自己的积累开始</small></span><span class="tile-arrow">↗</span></button><button class="studio-tile" data-page="game" @click="navigate('game')"><span class="tile-symbol">↘</span><span><strong>换一种节奏。</strong><small>下落消除 · 轻松练习编码</small></span><span class="tile-arrow">↗</span></button></nav>
+      <nav class="studio-tiles" aria-label="练习入口"><button class="studio-tile" data-page="words" @click="navigate('practice','vocabulary')"><span class="tile-symbol">Aa</span><span><strong>只练，还不熟的。</strong><small>生词专项 · 从自己的积累开始</small></span><span class="tile-arrow">↗</span></button><button class="studio-tile" data-page="game" @click="navigate('game')"><span class="tile-symbol">↘</span><span><strong>太空打字防御战</strong><small>输入五笔编码，守住防线</small></span><span class="tile-arrow">↗</span></button></nav>
     </main>
     <main v-else-if="page==='courses'" class="studio-home"><span class="studio-kicker">CHOOSE YOUR PRACTICE</span><h1>今天，从哪里开始？</h1><p>按课程独立保存覆盖与暂时熟练进度。</p><div class="studio-courses"><button v-for="([id,label],i) in courses" :key="id" @click="navigate('practice',id)"><b>{{i===4?'Aa':i===5?'＋':`0${i+1}`}}</b><strong>{{label}}</strong><small>进入课程，接续已有学习进度 ↗</small></button></div></main>
     <main v-else-if="page!=='practice'&&page!=='game'" class="management" :class="{'settings-page':page==='settings'}">
@@ -60,7 +60,6 @@ onUnmounted(()=>cleanup());
           <label>每组题数<input v-model.number="settings.groupSize" type="number" min="5" max="100" required></label>
           <label>连续正确阈值<input v-model.number="settings.threshold" type="number" min="1" max="10" required></label>
           <label>练习时长<select v-model.number="settings.duration"><option v-for="n in 5" :value="n">{{n}} 分钟</option></select></label>
-          <label>游戏难度<select v-model="settings.difficulty"><option value="easy">简单</option><option value="normal">普通</option><option value="hard">困难</option></select></label>
           <button class="primary" :disabled="!ready||busy">{{busy?'保存中…':'保存设置'}}</button>
         </form>
       </section>

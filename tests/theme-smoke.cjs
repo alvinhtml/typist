@@ -58,7 +58,10 @@ app.whenReady().then(async()=>{try{
  for(const value of ['light','dark']){await theme(value);await fit();assert.equal(await call('getComputedStyle(document.querySelector("#practice-answer")).borderTopWidth'),'0px');await capture(`practice-active-${value}`);}
  await click('[data-action=finish]');await wait();await click('.practice-panel:not(.game-panel) [data-page=home]');await wait();
  await theme('dark');await click('[data-page=game]');await wait();
- for(const width of [1100,760]){win.setSize(width,780);await wait();await fit();await compactStats('.game-panel>.practice-stats');assert.ok(await call(`(()=>{const a=document.querySelector('.game-body').getBoundingClientRect(),t=document.querySelector('.game-panel>.practice-options').getBoundingClientRect(),b=document.querySelector('.game-panel>.practice-stats').getBoundingClientRect();return Math.abs(a.top-t.bottom)<2&&Math.abs(a.bottom-b.top)<2&&b.bottom<=innerHeight+1&&document.documentElement.scrollHeight<=innerHeight+1;})()`),'full game region preserved');}
+ for(const width of [1100,760]){
+   win.setSize(width,780);await wait();await fit();
+   assert.ok(await call(`(()=>{const a=document.querySelector('.game-arena').getBoundingClientRect();return a.top===0&&a.width===innerWidth&&Math.abs(a.height-innerHeight)<2&&!document.querySelector('.studio-header');})()`),'game preparation uses the full viewport');
+ }
  await capture('game-dark-narrow');
  await click('.game-panel [data-page=home]');await wait();win.setSize(1100,780);
  console.log('PASS light/dark page coverage, semantic text contrast >=4.5, theme persistence, cross-window sync, OS changes, reduced motion and full game viewport at 1100/760px');clearTimeout(timeout);app.quit();

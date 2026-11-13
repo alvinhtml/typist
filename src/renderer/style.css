@@ -474,13 +474,7 @@ h1,.settings-intro h1{font:500 44px/1.25 "Songti SC",STSong,SimSun,serif;letter-
 .settings-page .settings-section>.settings-form,.settings-page .exchange-content{margin-top:22px}
 .settings-page .settings-section-heading h2{font-size:21px}
 .settings-page .business .list-toolbar{margin-top:24px}
-.game-panel{height:calc(100dvh - 90px)!important;min-height:440px!important;padding:20px 32px 0}
-.game-body{background:var(--ink);color:var(--paper);border-radius:12px}
-.game-target{padding:12px!important}
-.game-target strong{display:inline-block;padding:10px 18px;background:var(--paper);color:var(--ink);border-radius:9px;font-family:"Songti SC",serif!important}
-.game-panel .practice-options{border:0;background:transparent;padding:0 0 18px}
-.game-panel .practice-stats{background:transparent;border:0;padding:16px 0}
-.game-overlay{color:var(--ink)}
+.shell.game-shell{height:100dvh;min-height:0}
 .compact .management{width:100%;padding:24px}
 .compact .text-page h1{font-size:30px}
 .compact .management>.card{padding:22px}
@@ -495,7 +489,6 @@ h1,.settings-intro h1{font:500 44px/1.25 "Songti SC",STSong,SimSun,serif;letter-
 .settings-page{grid-template-columns:1fr}
 .settings-tabs{flex-direction:row;flex-wrap:wrap}
 .settings-content{padding:24px}
-.game-panel{padding:16px 24px 0;height:calc(100dvh - 90px)!important}
 .studio-hero-copy{padding:28px}
 .studio-tile{gap:12px;padding:20px}
 .studio-tile strong{font-size:15px}
@@ -511,7 +504,6 @@ h1,.settings-intro h1{font-size:34px}
 .practice-panel:not(.game-panel) .practice-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 .practice-panel:not(.game-panel) .practice-body{padding:24px 16px}
 .practice-panel:not(.game-panel) .practice-options{padding:14px}
-.game-panel{height:calc(100dvh - 135px)!important}
 .studio-tile strong{font-size:17px}
 .management>.card{padding:22px}
 .text-page h1,.vocabulary-page .settings-section-heading h2{font-size:30px}

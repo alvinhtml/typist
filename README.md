@@ -25,7 +25,7 @@ npm run make
 
 - `test`：练习规则、输入事件、学习和词库事务、存储与内存会话测试，临时目录自动清理。
 - `smoke`：真实 Electron 窗口、IPC 和生命周期检查，需要桌面环境。
-- `smoke:business`：真实 Electron 表单、文本结果、改码、删除与双窗口通知，使用临时数据库。
+- `smoke:business` 和 `smoke:csv`：使用临时数据库与隐藏的 Electron 窗口，验证词库表单、双窗口通知及 CSV 交换。仍需能启动 Electron 的桌面环境。
 - `smoke:practice`：真实 Electron 合成输入、可控时钟、暂停、成绩、删除同步与确认取消；不代替真实输入法人工验收。
 - `make`：在 macOS 生成 DMG/ZIP，在 Windows 生成 Squirrel 安装包/ZIP，输出在 `out/`。macOS 本地打包模块需要 Xcode Command Line Tools；若安装时跳过了脚本，运行 `npm rebuild macos-alias fs-xattr`。
 - 本轮 macOS arm64 已验证；Windows、Intel 与最低 macOS 支持范围仍待实机检查。安装包未签名或公证。

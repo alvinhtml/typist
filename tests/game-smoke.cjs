@@ -1,12 +1,242 @@
+const { app, BrowserWindow } = require('electron');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const { artifactPath } = require('./artifacts.cjs');
-const {app,BrowserWindow}=require('electron'),assert=require('node:assert/strict'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');const dir=fs.mkdtempSync(path.join(os.tmpdir(),'typist-game-'));process.env.TYPIST_TEST_USER_DATA=dir;app.setAppPath(path.resolve(__dirname,'..'));require('../dist/main/index');const wait=ms=>new Promise(r=>setTimeout(r,ms??180));const timeout=setTimeout(()=>app.exit(1),40000);
-app.whenReady().then(async()=>{try{await wait(800);const main=BrowserWindow.getAllWindows()[0],call=s=>main.webContents.executeJavaScript(s);const nativeClick=async selector=>{const point=await call(`(()=>{const r=document.querySelector(${JSON.stringify(selector)}).getBoundingClientRect();return {x:Math.round(r.x+r.width/2),y:Math.round(r.y+r.height/2)};})()`);main.webContents.sendInputEvent({type:'mouseDown',...point,button:'left',clickCount:1});main.webContents.sendInputEvent({type:'mouseUp',...point,button:'left',clickCount:1});await wait();};const before=(await call('window.typist.getSnapshot()')).value;await call("document.querySelector('[data-page=game]').click()");await wait();assert.ok(await call('!document.querySelector(".page-header")&&!document.querySelector(".app-footer")&&!document.querySelector("main.management")'));assert.ok(await call('!!document.querySelector(".game-panel > .practice-options")&&!!document.querySelector(".game-panel > .practice-body")&&!!document.querySelector(".game-panel > .practice-stats")'));app.focus({steal:true});main.show();main.focus();await wait(500);await nativeClick('[data-game=start]');await wait(3300);if(await call('!!document.querySelector("[data-game=resume]")')){console.log('Native window lost focus during countdown; explicitly resuming retained game');app.focus({steal:true});main.focus();await call('document.querySelector("[data-game=resume]").click()');await wait();}assert.ok((await call('document.querySelector(".game-panel").innerText')).includes('游戏中'),await call('document.querySelector(".game-panel").innerText'));assert.equal(await call('document.activeElement?.getAttribute("aria-label")'),'游戏编码','countdown focuses input after a native start click');const initial=await call('Array.from(document.querySelectorAll(".game-target")).map(e=>e.style.top)');await wait(150);assert.notDeepEqual(await call('Array.from(document.querySelectorAll(".game-target")).map(e=>e.style.top)'),initial);
-await nativeClick('[data-game=pause]');await wait();const paused=await call('Array.from(document.querySelectorAll(".game-target")).map(e=>e.style.top)');await wait(200);assert.deepEqual(await call('Array.from(document.querySelectorAll(".game-target")).map(e=>e.style.top)'),paused);await nativeClick('[data-game=resume]');await wait();
-assert.equal(await call('document.activeElement?.getAttribute("aria-label")'),'游戏编码','resume focuses the real input');
-for(const key of ['A','b']){main.webContents.sendInputEvent({type:'keyDown',keyCode:key});main.webContents.sendInputEvent({type:'keyUp',keyCode:key});}await wait();assert.equal(await call('document.querySelector("[data-game=letters]").textContent'),'ab');await call(`(()=>{const el=document.querySelector('[aria-label="游戏编码"]');for(const key of ['Backspace','Backspace'])el.dispatchEvent(new KeyboardEvent('keydown',{key,bubbles:true}));})()`);assert.equal(await call('document.querySelector("[data-game=letters]").textContent'),'—');assert.equal(await call('getComputedStyle(document.querySelector(".game-answer")).opacity'),'0');
-const clickPoint=await call('(()=>{const r=document.querySelector(".game-panel .stat").getBoundingClientRect();return {x:Math.round(r.x+r.width/2),y:Math.round(r.y+r.height/2)};})()');main.webContents.sendInputEvent({type:'mouseDown',...clickPoint,button:'left',clickCount:1});main.webContents.sendInputEvent({type:'mouseUp',...clickPoint,button:'left',clickCount:1});await wait();assert.equal(await call('document.activeElement?.getAttribute("aria-label")'),'游戏编码','clicking passive game chrome keeps typing available');main.webContents.sendInputEvent({type:'keyDown',keyCode:'z'});main.webContents.sendInputEvent({type:'keyUp',keyCode:'z'});await wait();assert.equal(await call('document.querySelector("[data-game=letters]").textContent'),'z');main.webContents.sendInputEvent({type:'keyDown',keyCode:'Backspace'});main.webContents.sendInputEvent({type:'keyUp',keyCode:'Backspace'});await wait();
-const fills=()=>call(`(()=>{const top=document.querySelector('.game-panel>.practice-options').getBoundingClientRect(),bottom=document.querySelector('.game-panel>.practice-stats').getBoundingClientRect(),arena=document.querySelector('.game-arena').getBoundingClientRect();return Math.abs(arena.top-top.bottom)<2&&Math.abs(arena.bottom-bottom.top)<2&&Math.abs(arena.width-innerWidth)<2&&bottom.bottom<=innerHeight+1&&document.documentElement.scrollHeight<=innerHeight+1;})()`);assert.ok(await fills(),'arena fills all space between controls and stats');
-const target=await call('document.querySelector(".game-target").dataset.word'),snap=await call('window.typist.getCourse({course:"1",offset:0,limit:200})');const code=snap.value.items.find(i=>i.word===target).codes[0];for(const key of [...code,'Space']){main.webContents.sendInputEvent({type:'keyDown',keyCode:key});main.webContents.sendInputEvent({type:'keyUp',keyCode:key});}await wait();assert.equal(await call('document.querySelector("[data-game=correct]").textContent'),'1');assert.equal(await call('document.querySelector("[data-game=letters]").textContent'),'—');
-await call('document.querySelector(".game-panel [aria-label=界面主题]").focus()');assert.equal(await call('document.activeElement.getAttribute("aria-label")'),'界面主题');assert.ok((await call('document.querySelector(".game-current-input small").textContent')).includes('点击游戏区'));const arenaPoint=await call('(()=>{const r=document.querySelector(".game-arena").getBoundingClientRect();return {x:Math.round(r.x+r.width/2),y:Math.round(r.y+r.height/2)};})()');main.webContents.sendInputEvent({type:'mouseDown',...arenaPoint,button:'left',clickCount:1});main.webContents.sendInputEvent({type:'mouseUp',...arenaPoint,button:'left',clickCount:1});await wait();assert.equal(await call('document.activeElement.getAttribute("aria-label")'),'游戏编码');
-await call("document.querySelector('[aria-label=游戏编码]').dispatchEvent(new Event('paste',{bubbles:true,cancelable:true}))");assert.equal(await call('document.querySelector("[data-game=correct]").textContent'),'1');await call("document.querySelector('.game-panel [data-page=home]').click()");await wait();await call("document.querySelector('[data-page=game]').click()");await wait();assert.ok((await call('document.querySelector(".game-panel").innerText')).includes('已暂停'));
-assert.equal(await call('getComputedStyle(document.querySelector(".game-answer")).borderTopWidth'),'0px');fs.writeFileSync(artifactPath('typist-game-layout.png'),(await main.webContents.capturePage()).toPNG());await main.setSize(760,740);await wait();assert.ok(await fills(),'narrow arena fills remaining viewport without scrolling');assert.ok(await call('document.documentElement.scrollWidth<=innerWidth'));fs.writeFileSync(artifactPath('typist-phase5-game.png'),(await main.webContents.capturePage()).toPNG());await call("document.querySelector('[data-game=finish]').click()");let state=await call('window.typist.getSnapshot()');await call(`window.typist.mutateSupplemental({requestId:'game-source',expectedRevision:${state.revision},value:[{kind:'add',entry:{word:'游戏同步测试词',code:'abcd',level:5}}]})`);state=await call('window.typist.getSnapshot()');await call(`window.typist.addVocabularyText({requestId:'game-vocabulary',expectedRevision:${state.revision},value:'游戏同步测试词'})`);await call(`(()=>{const el=document.querySelector('[aria-label=游戏课程]');el.value='vocabulary';el.dispatchEvent(new Event('change',{bubbles:true}));})()`);await wait();app.focus({steal:true});main.show();main.focus();await wait(500);await call("document.querySelector('[data-game=start]').click()");await wait(3300);if(await call('!!document.querySelector("[data-game=resume]")')){console.log('Native window lost focus during countdown; explicitly resuming retained game');app.focus({steal:true});main.focus();await call('document.querySelector("[data-game=resume]").click()');await wait();}assert.equal(await call('document.querySelectorAll(".game-target").length'),1);for(const key of 'abcd'){main.webContents.sendInputEvent({type:'keyDown',keyCode:key});main.webContents.sendInputEvent({type:'keyUp',keyCode:key});}await wait();assert.equal(await call('document.querySelector("[data-game=correct]").textContent'),'1','four real keys automatically eliminate a target');await call('window.typist.openText()');await wait();const text=BrowserWindow.getAllWindows().find(w=>w!==main);if(text.webContents.isLoading())await new Promise(r=>text.webContents.once('did-finish-load',r));state=await call('window.typist.getSnapshot()');await text.webContents.executeJavaScript(`window.typist.deleteVocabulary({requestId:'game-remove',expectedRevision:${state.revision},value:{words:['游戏同步测试词'],pairs:[]}})`);await wait(350);assert.equal(await call('document.querySelectorAll(".game-target").length'),0);assert.ok((await call('document.querySelector(".game-panel").innerText')).includes('本次游戏结束'));const after=(await call('window.typist.getSnapshot()')).value;assert.deepEqual(after.learning,before.learning);assert.deepEqual(after.courseProgress,before.courseProgress);console.log('PASS game start/countdown, movement, pause/resume, code submission, paste rejection, page retention, narrow layout and independent learning');clearTimeout(timeout);app.quit();}catch(e){console.error(e);app.exit(1);}});app.on('quit',()=>fs.rmSync(dir,{recursive:true,force:true,maxRetries:10,retryDelay:50}));
+
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'typist-game-'));
+process.env.TYPIST_TEST_USER_DATA = dir;
+app.setAppPath(path.resolve(__dirname, '..'));
+require('../dist/main/index');
+
+const wait = (ms = 120) => new Promise(resolve => setTimeout(resolve, ms));
+const deadline = setTimeout(() => { console.error('Game smoke timed out'); app.exit(1); }, 40000);
+
+app.whenReady().then(async () => {
+  try {
+    await wait(800);
+    const main = BrowserWindow.getAllWindows()[0];
+    const call = code => main.webContents.executeJavaScript(code);
+    const click = async selector => {
+      await call(`document.querySelector(${JSON.stringify(selector)}).click()`);
+      await wait();
+    };
+    const key = keyCode => {
+      main.webContents.sendInputEvent({ type: 'keyDown', keyCode });
+      main.webContents.sendInputEvent({ type: 'keyUp', keyCode });
+    };
+    const keys = async code => {
+      for (const letter of code) key(letter === ' ' ? 'Space' : letter);
+      await wait();
+    };
+    const read = selector => call(`document.querySelector(${JSON.stringify(selector)}).textContent`);
+    const phase = () => read('.game-status');
+    const focus = async () => {
+      app.focus({ steal: true });
+      main.show();
+      main.focus();
+      await wait();
+    };
+    const ensureRunning = async () => {
+      for (let attempt = 0; attempt < 12; attempt++) {
+        if (await phase() === '游戏中' && main.isFocused()) return;
+        await focus();
+        if (await phase() === '已暂停') await click('[data-game=resume]');
+      }
+      assert.equal(await phase(), '游戏中');
+    };
+    const capture = async name => {
+      fs.writeFileSync(artifactPath(`typist-defense-${name}.png`), (await main.webContents.capturePage()).toPNG());
+    };
+    const select = (label, value) => call(`(() => {
+      const element = document.querySelector('[aria-label="${label}"]');
+      element.value = '${value}';
+      element.dispatchEvent(new Event('change', { bubbles: true }));
+    })()`);
+    const snapshot = async () => (await call('window.typist.getSnapshot()')).value;
+    const before = await snapshot();
+
+    await click('.studio-header [data-page=settings]');
+    assert.equal(await call('document.querySelector(".settings-page").innerText.includes("游戏难度")'), false);
+    await click('.studio-logo');
+    await click('[data-page=game]');
+    assert.equal(await call('!!document.querySelector("[aria-label=游戏难度]")'), false);
+    assert.match(await read('.mission-options'), /难度标准/);
+    const briefingFits = () => call(`(() => {
+      const overlay = document.querySelector('.briefing');
+      const bounds = overlay.getBoundingClientRect();
+      const card = overlay.querySelector('.mission-card').getBoundingClientRect();
+      return bounds.left === 0 && bounds.top === 0 && bounds.right === innerWidth &&
+        Math.abs(bounds.bottom - innerHeight) < 2 && card.left >= bounds.left &&
+        card.right <= bounds.right && overlay.scrollWidth === overlay.clientWidth;
+    })()`);
+    assert.ok(await briefingFits(), 'briefing fills the default window without clipping the card');
+    const [initialWidth, initialHeight] = main.getSize();
+    main.setSize(760, 640);
+    await wait();
+    assert.ok(await briefingFits(), 'briefing fits the minimum window');
+    main.setSize(initialWidth, initialHeight);
+    await wait();
+    await select('游戏时长', '2');
+    await capture('briefing');
+
+    await call('window.gameNow=0; Object.defineProperty(performance, "now", {value: () => window.gameNow}); true');
+    const clock = async time => { await call(`window.gameNow=${time}`); await wait(); };
+    const fullViewport = () => call(`(() => {
+      const arena = document.querySelector('.game-arena').getBoundingClientRect();
+      const hud = document.querySelector('.combat-hud').getBoundingClientRect();
+      const ship = document.querySelector('.player').getBoundingClientRect();
+      const plumes = [...document.querySelectorAll('.player .exhaust')].map(e => e.getBoundingClientRect());
+      const target = document.querySelector('.enemy-ship')?.getBoundingClientRect();
+      return arena.x === 0 && arena.y === 0 && arena.width === innerWidth && Math.abs(arena.height-innerHeight)<2 &&
+        hud.right <= innerWidth && ship.bottom < innerHeight && plumes.every(p => p.bottom <= innerHeight) &&
+        (!target || target.top >= hud.bottom) && document.documentElement.scrollWidth <= innerWidth &&
+        !document.querySelector('.studio-header,.game-panel .practice-options,.game-panel .practice-stats');
+    })()`);
+
+    await focus();
+    await click('[data-game=start]');
+    if (await phase() === '已暂停') await click('[data-game=resume]');
+    else assert.equal(await phase(), '准备中');
+    await clock(5100);
+    await ensureRunning();
+    assert.equal(await call('document.activeElement.getAttribute("aria-label")'), '游戏编码');
+    assert.equal(await read('[data-game=defense]'), '10 / 10');
+    assert.equal((await snapshot()).settings.duration, 2);
+    assert.equal(await call('document.querySelector(".game-panel").innerText.includes("准确率")'), false);
+    await capture('default');
+    assert.ok(await fullViewport(), JSON.stringify(await call(`[innerWidth,innerHeight,document.documentElement.scrollWidth,...['.game-arena','.combat-hud','.player','.player .exhaust','.enemy-ship'].map(s=>document.querySelector(s)?.getBoundingClientRect().toJSON())]`)));
+    assert.ok(await call('[".player-ship",".enemy-ship",".defense-line",".asteroids"].every(s => document.querySelector(s).naturalWidth > 0)'));
+
+    await ensureRunning();
+    await keys('ab');
+    assert.equal(await read('[data-game=letters]'), 'ab');
+    key('Escape');
+    await wait();
+    assert.equal(await phase(), '已暂停');
+    assert.equal(await read('[data-game=letters]'), '—');
+    const frozen = () => call(`JSON.stringify([
+      document.querySelector('[data-game=time]').textContent,
+      ...[...document.querySelectorAll('.game-target')].map(e=>e.style.top)
+    ])`);
+    const state = await frozen();
+    await clock(13000);
+    await keys('abcd');
+    assert.equal(await frozen(), state);
+    assert.equal(await call('getComputedStyle(document.querySelector(".player .exhaust")).animationPlayState'), 'paused');
+    await capture('paused');
+    await focus();
+    key('Escape');
+    await wait();
+    assert.equal(await phase(), '游戏中');
+    assert.equal(await call('document.activeElement.getAttribute("aria-label")'), '游戏编码');
+    assert.equal(await frozen(), state);
+    const word = await call('document.querySelector(".game-target").dataset.word');
+    const code = await call(`(async () => {
+      for (let offset=0; ; offset+=200) {
+        const {value} = await window.typist.getCourse({course:"1",offset,limit:200});
+        const item = value.items.find(i => i.word === ${JSON.stringify(word)});
+        if (item) return item.codes[0];
+        if (offset+200>=value.total) throw Error("Missing target");
+      }
+    })()`);
+    await call('document.activeElement.dispatchEvent(new Event("paste", {bubbles:true,cancelable:true}))');
+    assert.equal(await read('[data-game=score]'), '0');
+    await keys(code.length === 4 ? code : code + ' ');
+    assert.equal(await read('[data-game=score]'), '100');
+    assert.equal(await read('[data-game=combo]'), '1');
+    assert.ok(await call('!!document.querySelector(".shot.bullet,.muzzle")'));
+    await clock(13295);
+    if (await phase() === '已暂停') {
+      await ensureRunning();
+      if (await call('!!document.querySelector(".shot.bullet")')) await clock(13590);
+    }
+    assert.ok(await call('!!document.querySelector(".shot.blast,.shot-points")'));
+    await capture('explosion');
+
+    await click('[data-game=pause]');
+    await click('[data-game=exit]');
+    assert.ok(await call('!!document.querySelector("[aria-label=游戏课程]") && !document.querySelector(".combat-hud")'));
+    assert.deepEqual((await snapshot()).learning, before.learning);
+    assert.match(await read('.game-panel [data-page=home]'), /返回主界面/);
+    await click('.game-panel [data-page=home]');
+    assert.ok(await call('!!document.querySelector(".studio-home") && !!document.querySelector(".studio-header [aria-label=主导航]")'));
+    await click('[data-page=game]');
+
+    const write = async (method, value) => {
+      const { revision } = await call('window.typist.getSnapshot()');
+      const response = await call(`window.typist.${method}(${JSON.stringify({ requestId: crypto.randomUUID(), expectedRevision: revision, value })})`);
+      assert.equal(response.ok, true, JSON.stringify(response));
+    };
+    await write('mutateSupplemental', [
+      { kind: 'add', entry: { word: '游戏同步测试词', code: 'abcd', level: 5 } },
+      { kind: 'add', entry: { word: '防线同步测试词', code: 'wxyz', level: 5 } },
+    ]);
+    await write('addVocabularyText', '游戏同步测试词 防线同步测试词');
+    await select('游戏课程', 'vocabulary');
+    await focus();
+    await click('[data-game=start]');
+    if (await phase() === '已暂停') await click('[data-game=resume]');
+    await clock(18700);
+    await ensureRunning();
+    assert.equal(await call('document.querySelectorAll(".game-target").length'), 2);
+    main.setContentSize(1120, 630);
+    await wait();
+    assert.ok(await fullViewport(), '16:9 viewport fits');
+    await capture('widescreen');
+    main.setSize(760, 640);
+    await wait();
+    await ensureRunning();
+    assert.ok(await fullViewport(), 'minimum viewport fits');
+    await capture('narrow');
+    await ensureRunning();
+    await keys('abcdwxyz');
+    assert.equal(await read('[data-game=combo]'), '2');
+    assert.equal(await read('[data-game=score]'), '200');
+    await clock(21300);
+    assert.ok(await call('!!document.querySelector(".game-target")'));
+
+    await call('window.typist.openText()');
+    await wait(300);
+    const text = BrowserWindow.getAllWindows().find(win => win !== main);
+    if (text.webContents.isLoading()) await new Promise(resolve => text.webContents.once('did-finish-load', resolve));
+    const { revision } = await call('window.typist.getSnapshot()');
+    const removed = await text.webContents.executeJavaScript(`window.typist.deleteVocabulary({
+      requestId: 'game-remove', expectedRevision: ${revision},
+      value: {words: ['游戏同步测试词', '防线同步测试词'], pairs: []}
+    })`);
+    assert.equal(removed.ok, true);
+    await wait(350);
+    assert.equal(await phase(), '本次游戏结束');
+    assert.equal(await read('[data-game=correct]'), '2');
+    assert.match(await read('.results'), /准确率100\.0%/);
+    await capture('results');
+    const after = await snapshot();
+    assert.deepEqual(after.learning, before.learning);
+    assert.deepEqual(after.courseProgress, before.courseProgress);
+    await click('[data-game=exit]');
+    assert.ok(await call('!!document.querySelector(".briefing")'));
+    await write('addVocabularyText', '游戏同步测试词');
+    await focus();
+    await click('[data-game=start]');
+    await clock(26700);
+    await ensureRunning();
+    await keys('abcd');
+    assert.equal(await read('[data-game=score]'), '100');
+    await click('[data-game=pause]');
+    await call('window.confirm=()=>true; true');
+    await click('[data-game=restart]');
+    assert.equal(await read('[data-game=score]'), '0');
+    assert.equal(await read('[data-game=combo]'), '0');
+    if (await phase() !== '已暂停') await click('[data-game=pause]');
+    await click('[data-game=exit]');
+    console.log('PASS immersive viewport, ESC freeze and resume, short/four-key input, battle effects, exit, course sync, results and learning isolation');
+    clearTimeout(deadline);
+    app.quit();
+  } catch (error) {
+    console.error(error);
+    app.exit(1);
+  }
+});
+app.on('quit', () => fs.rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 }));

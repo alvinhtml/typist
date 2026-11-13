@@ -1,0 +1,545 @@
+{
+  "assets": [
+    {
+      "path": "assets/game/ships/enemy_heavy.png",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "ac4460d012ff00b50b7ab638c3864f198b44038cfffd94f833c550555bf5b99d"
+    },
+    {
+      "path": "assets/game/ships/enemy_reward.png",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "0bbeb05d7c6cb13b38d152509c7ca520b59d10dd3b611aca94f7ff3283cb5661"
+    },
+    {
+      "path": "assets/game/ships/enemy_armored.png",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "7de84b24172f922bcf0a355c601783b46ae1fac007d0585f1493a2ec864595d0"
+    },
+    {
+      "path": "assets/game/ships/enemy_scout.png",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "36e4906288fdca1305fa3ba2d23b04e34d671683acf2c44b2c7c19df8292fa19"
+    },
+    {
+      "path": "assets/game/ships/player_ship.png",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "16b6015dc505053698a7ab0987c8d9e878ead199a19ee7d46b90eacd27bddc9a"
+    },
+    {
+      "path": "assets/game/scene/shield/barrier_damaged.png",
+      "width": 1600,
+      "height": 320,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "43d416e8f8851409402932420302ba921607ffd02b8cbbd952b4d00d1a5e1edc"
+    },
+    {
+      "path": "assets/game/scene/shield/impact_03.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "8e477e2e056fb9bf3e640be5bcc0fcf06ed6a5b32cf4764d1fc8d84f36eed410"
+    },
+    {
+      "path": "assets/game/scene/shield/impact_00.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "2e8fd6973eedb0f6a959f9ae3a8cb02e0db09df96e2157c783ce427913a13fda"
+    },
+    {
+      "path": "assets/game/scene/shield/impact_04.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "833f0d45bb154944314bd5470ad44f4862debbfacde93073ab3f13d144ed7480"
+    },
+    {
+      "path": "assets/game/scene/shield/barrier_normal.png",
+      "width": 1600,
+      "height": 320,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "43631710ea7821dd995e8d413acefdea4f057c2610d579244889872eeb3c3fe7"
+    },
+    {
+      "path": "assets/game/scene/shield/impact_06.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "d1213932ec463f8d5075fa2366a1781d8be570d094756f7822abdd9cedf4ce3e"
+    },
+    {
+      "path": "assets/game/scene/shield/impact_01.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "620038bef1b4fe31383d2cd39cd1e6d79da162fa5288e55208ea09887ffb6dc8"
+    },
+    {
+      "path": "assets/game/scene/shield/barrier_critical.png",
+      "width": 1600,
+      "height": 320,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "4bb8577477dc06b62596860c39af1402544d6711b26c4f8ec013f411a73d02e7"
+    },
+    {
+      "path": "assets/game/scene/shield/impact_02.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "681a9dd9948248dbad2d9ce96f32a6bcb90e20073127138b72e384c1cace1e55"
+    },
+    {
+      "path": "assets/game/scene/shield/impact_07.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "f252b00fff62f30003a8b0968034c8e2f090f0626df403b770a4b5db8a1dbbe2"
+    },
+    {
+      "path": "assets/game/scene/shield/impact_05.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "8338db9c40120fbed2b424908eebcdc08a58f5ab201e8a3f826fdd878d159f83"
+    },
+    {
+      "path": "assets/game/scene/background/deep_blue.png",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "c0d3dff0476b3fe63891837733b6b38a28f41110a0f504c562c139a0f78b301e"
+    },
+    {
+      "path": "assets/game/scene/background/violet_nebula.png",
+      "width": 1920,
+      "height": 1080,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "73b0e7dfb3b087ac6f82b25a000e9755f531f65771c49798432bc9d7722aa4ee"
+    },
+    {
+      "path": "assets/game/scene/hologram/core_armored.png",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "4acd56a27000b7328004ff5924961b7c091872be248ee018d53e361d39abad17"
+    },
+    {
+      "path": "assets/game/scene/hologram/core_heavy.png",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "4de6cca18d7b7c70cb8853441f692397f199b812d76774d1d301bee0c61da8b9"
+    },
+    {
+      "path": "assets/game/scene/hologram/core_scout.png",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "ff5bd2613db258190d4acfcfd74c488d6417a8183c1d6d0a77304b8e318ee02c"
+    },
+    {
+      "path": "assets/game/scene/hologram/core_reward.png",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "ee3a65a427ad3be927cdb4c21c27333e45b5967e5345a3923a92d85f794d2e84"
+    },
+    {
+      "path": "reference/combat_art_reference.png",
+      "width": 1536,
+      "height": 1024,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "5307327c5b312481bb775631cbf00a2e63cbbf8ca4616ba1a94da69bd518f93e"
+    },
+    {
+      "path": "assets/game/combat/damage_cracks_1.png",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "185480dfba47a627e98401d08f293337c8ebd90c55adc9dc693dceba2b0191e3"
+    },
+    {
+      "path": "assets/game/combat/damage_cracks_2.png",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "1b67a5a0fe3aa5f481503a7dd1953727faff55704b5d574d66f4e528d65086e3"
+    },
+    {
+      "path": "assets/game/combat/explosion_small/01.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "7cbf5a43d0e6d3f1f931fd87406263bf0641ba1fc14dabe5de090feb88f3b223"
+    },
+    {
+      "path": "assets/game/combat/explosion_small/02.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "1c1bd45592da0df485985a3b229d105bd08eb1a11d95875f77e4bb85878e23f5"
+    },
+    {
+      "path": "assets/game/combat/explosion_small/00.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "2bd76f6ce461278a1c9168d9c50036b4187fff83503483acdc52c3ce4813f2a7"
+    },
+    {
+      "path": "assets/game/combat/explosion_small/05.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "7be4049ddcdccd31201254b0dcf9f6b5a98a47939812898d0e11c8c0ba503c65"
+    },
+    {
+      "path": "assets/game/combat/explosion_small/03.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "7320fab72bba25e48c191464f31cff265d0f6b60ef2e925d0b24a88d0b7cf283"
+    },
+    {
+      "path": "assets/game/combat/explosion_small/04.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "527f7920710323ffd9a65d95cb2da1b1f3a312951c35b03e9055920dcfe3bf2d"
+    },
+    {
+      "path": "assets/game/combat/damage_flash/01.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "47a014c55030e39ba36d7c263ef021615b6a6c41b3abfb911363752969242cc7"
+    },
+    {
+      "path": "assets/game/combat/damage_flash/02.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "681af792c39fdd09eec153ca23ef2bb55ce63f7ae84f3a5dbd0c254966243431"
+    },
+    {
+      "path": "assets/game/combat/damage_flash/00.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "243694c716782cd29c530fe16c0b85176812690a36ae418440fb3729bb79cc1f"
+    },
+    {
+      "path": "assets/game/combat/damage_flash/03.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "75fd1695af359a05ed83c0a612fe9eadb77dfad314fd6db35c29bfc3be2d1337"
+    },
+    {
+      "path": "assets/game/combat/hit_spark/01.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "ee6e2bcce49e7a9a40961162ab17bd93f0e5a5987676309647a7af1f36766255"
+    },
+    {
+      "path": "assets/game/combat/hit_spark/02.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "abcee7100650eec6bf0fb6f8a54e3c50169c45ff5fc4690cf954f90a14a0d7ce"
+    },
+    {
+      "path": "assets/game/combat/hit_spark/00.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "ebfedba0585aaa18636eb0198ddd0e3b095a568ac12fbf2f1bd5b7e9258a9305"
+    },
+    {
+      "path": "assets/game/combat/hit_spark/03.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "0876000648786987e968ea00fc915de46da711a44020f9043d38b0480e9c85ea"
+    },
+    {
+      "path": "assets/game/combat/explosion_large/01.png",
+      "width": 384,
+      "height": 384,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "4bd54b684652023b0987ce9344f9aeda742d00487e7d56bc489691cd0a4ad361"
+    },
+    {
+      "path": "assets/game/combat/explosion_large/02.png",
+      "width": 384,
+      "height": 384,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "f95f61cf882426aea173c41e58c8acece43b7436e384c9218522f2078afac249"
+    },
+    {
+      "path": "assets/game/combat/explosion_large/07.png",
+      "width": 384,
+      "height": 384,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "a8c7da8602093145840a7209c958c30201042237b2a25b3ecd34ff20c2c8daa6"
+    },
+    {
+      "path": "assets/game/combat/explosion_large/00.png",
+      "width": 384,
+      "height": 384,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "dee6355b7ee61df7114d06b593ff68dd332ba640735a7cd5f193bda95e9f955d"
+    },
+    {
+      "path": "assets/game/combat/explosion_large/05.png",
+      "width": 384,
+      "height": 384,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "041b42790e9518cf6cc6718fa6c26a6fb8f43c27f44e26246eb83b66380c11bf"
+    },
+    {
+      "path": "assets/game/combat/explosion_large/06.png",
+      "width": 384,
+      "height": 384,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "a4c7563e7522214b83ef6d73da2d9db53f97db2b6195b7006fe10abf8ab09795"
+    },
+    {
+      "path": "assets/game/combat/explosion_large/03.png",
+      "width": 384,
+      "height": 384,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "152d31b5356851c83b1ff00eec238114ec4b4a1a212219ba40e4549bd94a1985"
+    },
+    {
+      "path": "assets/game/combat/explosion_large/04.png",
+      "width": 384,
+      "height": 384,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "a7b886739d726959d9ab639c987247e98277782343625b92cfccee04539f101a"
+    },
+    {
+      "path": "assets/game/combat/bullet_piercing/01.png",
+      "width": 128,
+      "height": 128,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "cb4a0bcf10fa5d686f733634cebb0f2881192a3d7fb92a3857a0b26dacd82cd2"
+    },
+    {
+      "path": "assets/game/combat/bullet_piercing/02.png",
+      "width": 128,
+      "height": 128,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "4a4f1219330daa6ae1ebafc8ab3b91084bda73baa9354cc957a07e856a10af5f"
+    },
+    {
+      "path": "assets/game/combat/bullet_piercing/00.png",
+      "width": 128,
+      "height": 128,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "9f4c0bd9a56905ae6e830a0efc6b0fb3eec7057e91533563185820dc65177218"
+    },
+    {
+      "path": "assets/game/combat/bullet_piercing/03.png",
+      "width": 128,
+      "height": 128,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "e5eae3cdb5856f2025dc07e5d0badcfd7892da5dcb7990590be202045c68b7db"
+    },
+    {
+      "path": "assets/game/combat/damage_smoke/01.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "03297566b365e755e29035834e58a832fe51735927240b8796638140d6828a21"
+    },
+    {
+      "path": "assets/game/combat/damage_smoke/02.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "834f0982a7f0cdda231ed0f18c29b2862b3f9ac89de6388a3bcc3f7cfe9d4de5"
+    },
+    {
+      "path": "assets/game/combat/damage_smoke/00.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "35bd10110b946921faf5ff80dfd7b9af59e93550a84c784b23cf39e2eac0030f"
+    },
+    {
+      "path": "assets/game/combat/damage_smoke/05.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "6c1fabfdd6694e9a75641ddec0b0830fe97c1ab4857a03284894b5889618f149"
+    },
+    {
+      "path": "assets/game/combat/damage_smoke/03.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "4246d6846360327d694a61dbaf6cf81a27868011cb23169ebc24c415667c7538"
+    },
+    {
+      "path": "assets/game/combat/damage_smoke/04.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "60af9b36bc8529457d70f15541e210f70998e1c4cc3c3032f76a3889a6b3c96e"
+    },
+    {
+      "path": "assets/game/combat/bullet_normal/01.png",
+      "width": 128,
+      "height": 128,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "61933cab453f128207ae61d299f051bf380e2d5fbf14c3a6bdde289251588fcc"
+    },
+    {
+      "path": "assets/game/combat/bullet_normal/02.png",
+      "width": 128,
+      "height": 128,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "b68a66ef038934ae48a4442a218db4527fa1fc0bc90a12d91bbe241665f58bb8"
+    },
+    {
+      "path": "assets/game/combat/bullet_normal/00.png",
+      "width": 128,
+      "height": 128,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "9c66e783bf93fba26cf184d14a345cfa9e4a45f8797b3712115ad3e9325c9218"
+    },
+    {
+      "path": "assets/game/combat/bullet_normal/03.png",
+      "width": 128,
+      "height": 128,
+      "mode": "RGBA",
+      "has_alpha": true,
+      "sha256": "10070b6f3335baa29e9e7cf05f4dadb3d090a2f9dc063b6f5360be9ea02c7638"
+    }
+  ],
+  "combat_animation_original_manifest": {
+    "version": "1.0",
+    "orientation": "bullet points upward; rotate at runtime",
+    "background": "transparent RGBA",
+    "animations": {
+      "bullet_normal": {
+        "frames": 4,
+        "size": 128,
+        "fps": 12,
+        "loop": true
+      },
+      "bullet_piercing": {
+        "frames": 4,
+        "size": 128,
+        "fps": 12,
+        "loop": true
+      },
+      "hit_spark": {
+        "frames": 4,
+        "size": 256,
+        "fps": 24,
+        "loop": false
+      },
+      "explosion_small": {
+        "frames": 6,
+        "size": 256,
+        "fps": 20,
+        "loop": false
+      },
+      "explosion_large": {
+        "frames": 8,
+        "size": 384,
+        "fps": 20,
+        "loop": false
+      },
+      "damage_smoke": {
+        "frames": 6,
+        "size": 256,
+        "fps": 12,
+        "loop": true
+      },
+      "damage_flash": {
+        "frames": 4,
+        "size": 256,
+        "fps": 24,
+        "loop": false
+      }
+    },
+    "overlays": [
+      "damage_cracks_1.png",
+      "damage_cracks_2.png"
+    ]
+  }
+}

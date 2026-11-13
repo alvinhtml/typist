@@ -1,0 +1,149 @@
+.game-panel {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  isolation: isolate;
+  overflow: hidden;
+  background: #040b15;
+  color: #e9f7ff;
+  color-scheme: dark;
+  --ink: #e9f7ff;
+  --muted: #a9c7d6;
+  --line: #32627b;
+  --surface: #0b2031;
+  --hover: #173c52;
+  --accent: #77e7ff;
+}
+.game-panel button, .game-panel select {
+  background: #0a1c2b;
+  border: 1px solid #38617a;
+  color: inherit;
+  border-radius: 4px;
+}
+.game-panel button:hover:not(:disabled) { background: #17394e; border-color: #80dff4; }
+.game-panel :is(button, select):focus-visible { outline: 2px solid #8eeaff; outline-offset: 3px; }
+.game-panel .launch {
+  background: linear-gradient(110deg, #8cf4ff, #44b9e9);
+  border-color: #adf9ff;
+  color: #041525;
+  font-weight: 800;
+  padding: 11px 26px;
+  box-shadow: 0 0 24px #34b9e247;
+}
+.game-panel .launch:hover:not(:disabled) { background: #aff6ff; }
+.game-status, .game-answer {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  opacity: 0;
+}
+.combat-hud {
+  position: absolute;
+  inset: 10px 12px auto;
+  min-height: 56px;
+  display: grid;
+  grid-template-columns: 1.45fr 1fr 1.7fr .75fr 1fr auto;
+  align-items: stretch;
+  gap: 1px;
+  padding: 2px;
+  background: linear-gradient(160deg, #a6ccd7, #224358 18%, #557b92 53%, #203d50 82%, #719aac);
+  clip-path: polygon(13px 0, calc(100% - 13px) 0, 100% 13px, 100% calc(100% - 13px), calc(100% - 13px) 100%, 13px 100%, 0 calc(100% - 13px), 0 13px);
+}
+.combat-hud > div, .combat-hud > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 1vw, 14px);
+  padding: 6px 9px;
+  background: linear-gradient(160deg, #132a3beb, #06101af7 74%);
+  white-space: nowrap;
+}
+.combat-hud > button { min-width: 74px; border-radius: 0; font-size: 20px; }
+.combat-hud > button:focus-visible { outline-offset: -4px; }
+.combat-hud small, .combat-hud button span, .ammo-hud small, .input-hud small { font-size: 11px; color: #b8d4e0; }
+.hud-brand strong { font: 800 27px/1 Georgia, serif; }
+.hud-brand strong span { color: #ff896d; }
+.combat-hud b { font: 700 clamp(16px, 2vw, 24px)/1 ui-monospace, monospace; }
+.combat-hud b.amber { color: #ffd290; }
+.defense-meter { display: flex; gap: 2px; }
+.defense-meter i { width: clamp(4px, .68vw, 10px); height: 8px; border-radius: 1px; background: #62fac0; box-shadow: 0 0 6px #50fbb96b; }
+.defense-meter i.spent { background: #263d4c; box-shadow: none; }
+.ammo-hud, .input-hud {
+  position: absolute;
+  bottom: 18px;
+  display: grid;
+  gap: 5px;
+  min-width: 112px;
+  padding: 8px 14px;
+  background: linear-gradient(140deg, #0d283bea, #050e19e8);
+  border: 1px solid #43829f;
+  box-shadow: inset 0 2px #72d5ed55, 0 4px 15px #0008;
+}
+.ammo-hud { left: 18px; }
+.input-hud { right: 18px; text-align: right; cursor: text; }
+.ammo-hud > div, .input-hud > span { display: flex; align-items: center; gap: 6px; }
+.input-hud > span { justify-content: flex-end; }
+.ammo-hud i { display: block; width: 9px; height: 19px; transform: skew(-22deg); border: 1px solid #507989; background: #1a3343; }
+.ammo-hud i.loaded { border-color: #aaffed; background: #58ecc9; box-shadow: 0 0 7px #5affcc; }
+.ammo-hud b, .input-hud i { font: 700 15px/1.3 ui-monospace, monospace; }
+.ammo-hud b { margin-left: 5px; }
+.input-hud i { min-width: 18px; text-align: center; padding: 2px; color: #bff4ff; background: #0d3547; border: 1px solid #367389; }
+.input-hud p { position: absolute; right: 0; bottom: 100%; background: #0b1825; border: 1px solid #416175; padding: 7px 10px; margin: 0 0 7px; white-space: nowrap; font-size: 12px; }
+.game-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow: auto;
+  background: #030a13a6;
+}
+.briefing {
+  max-width: none;
+  margin: 0;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  padding-inline: clamp(16px, 9vw, 145px);
+  background: linear-gradient(90deg,#040d19d9,#040d191a);
+}
+.mission-card {
+  width: min(580px, 100%);
+  padding: clamp(20px, 4vw, 38px);
+  background: linear-gradient(140deg, #122f43ee, #060f1aee 62%);
+  border: 1px solid #568fa7;
+  border-top: 2px solid #8ce7f6;
+  box-shadow: 0 16px 65px #000b, inset 0 0 32px #407db515;
+}
+.briefing .mission-card { width: min(550px, 100%); }
+.mission-card h1 { color: #f4fbff; font-size: clamp(25px, 3.5vw, 44px); letter-spacing: .06em; margin: 14px 0 6px; }
+.mission-card p { margin: 4px 0 20px; color: #b8d5e2; }
+.mission-options { display: grid; grid-template-columns: 1fr 1fr .72fr; gap: 12px; margin: 28px 0 22px; }
+.mission-options > * { display: grid; gap: 7px; font-size: 12px; color: #a8ccd9; }
+.mission-options select, .mission-options strong { min-height: 38px; padding: 8px; }
+.mission-options strong { color: #c7ebf4; border: 1px solid #35536a; background: #0c1a28; border-radius: 4px; }
+.pause-card { width: min(365px, 100%); display: grid; text-align: center; gap: 9px; }
+.countdown-screen { place-content: center; justify-items: center; background: #05111b65; pointer-events: none; }
+.countdown-screen strong { font: 800 clamp(72px, 12vw, 148px)/1 ui-monospace, monospace; color: #c9f8ff; text-shadow: 0 0 42px #24d5ff; }
+.countdown-screen p { color: #e1f8ff; }
+.result-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0 18px; }
+.result-columns section { padding: 10px 13px; border: 1px solid #31516a; background: #06101aa0; }
+.result-columns h2 { margin: 0 0 8px; color: #99e5ff; font-size: 14px; }
+.result-columns dl { margin: 0; font-size: 13px; }
+.result-columns dl div { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; }
+.result-columns dt { color: #b9d0df; }
+.result-columns dd { margin: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.result-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.mission-card p.mission-error { color: #ffc0ac; }
+@media (max-width: 500px) {
+  .mission-options { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 850px) {
+  .combat-hud { grid-template-columns: 1fr .95fr 1.45fr .65fr .78fr auto; }
+  .hud-brand small { display: none; }
+  .hud-defense { flex-wrap: wrap; gap: 3px 8px !important; }
+}
