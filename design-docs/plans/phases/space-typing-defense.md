@@ -18,6 +18,7 @@
 ## 2026-11-12 实施与验证
 
 - 规则按有效时间处理生成、突破和限时事件，提交同步结算伤害、穿甲弹、得分和连击。初版采用 2.4 秒生成间隔与 4 条独占航道。飞船及文字核心使用长边 288px 的显示版本。
+  后续已改为按同屏题量补充、横向随机分布，现行规则见 [打字游戏需求](../../requirements/typing-game.md)。
 - `npm test` 通过类型检查、构建和 52 项单测，覆盖同码顺序、多码、连续命中、弹药、突破、冻结和两种自动结算。[单测日志](../../../test-results/space-typing-defense-test.log)
 - `npm run smoke:game` 在受限沙箱内完成构建，Electron 启动时收到 SIGABRT。同一命令在 macOS arm64 原生桌面最终以退出码 0 通过，覆盖设置与时长记忆、键盘焦点、两组连续四码、暂停和离页、760px 布局、跨窗口删除存活目标及练习进度隔离。[沙箱日志](../../../test-results/space-typing-defense-smoke-sandbox.log) · [桌面日志](../../../test-results/space-typing-defense-smoke-native.log) · [窄窗口词组截图](../../../test-results/typist-space-game-vocabulary.png)
 - 人工验收仍待完成，见[待验证事项](../../state/issues.md#太空打字防御战待验证2026-11-12)。

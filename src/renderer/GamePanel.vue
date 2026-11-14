@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
-import { ammoLimit, Game, type Target } from '../shared/game';
+import { ammoLimit, Game, shotFlightMs, type Target } from '../shared/game';
 import GameBattlefield from './GameBattlefield.vue';
+import { createGameAudio } from './game-audio';
 import { bindAnswerInput } from '../shared/answer-input';
 import type { Course, CourseWord } from '../shared/contracts';
 
@@ -9,6 +10,7 @@ const props = defineProps<{ visible: boolean; beforeStart: () => Promise<boolean
 const emit = defineEmits<{ home: [] }>();
 const courses = [['1', '一级'], ['2', '二级'], ['3', '三级'], ['4', '四级'], ['5', '词组'], ['vocabulary', '生词本']] as const;
 const game = new Game();
+const audio = createGameAudio();
 const course = ref<Course>('1');
 const duration = ref(1);
 const preparing = ref(true);
@@ -37,6 +39,8 @@ let removeChanged = () => {};
 let animation = 0;
 let queue = Promise.resolve();
 let focusLostDuringStart = false;
+let countdownSecond = 0;
+let previousDefense = game.defense;
 
 function focusInput() {
   if (props.visible && phase.value === 'running' && !input.value?.disabled) input.value?.focus({ preventScroll: true });
@@ -54,7 +58,11 @@ function bind() {
   const unbind = bindAnswerInput(element, code => {
     const previous = game.session.phase;
     const attack = game.answer(code);
-    if (attack) aim.value = attack.target;
+    if (attack) {
+      aim.value = attack.target;
+      audio.playEffect('inputConfirm');
+      audio.playEffect('laserFire');
+    }
     notice.value = attack === false ? '编码未匹配任何敌机' : attack && attack.stockFull ? '穿甲弹库存已满' : '';
     refresh(previous);
   }, () => {
@@ -74,19 +82,47 @@ watch(input, bind, { flush: 'post' });
 
 function refresh(previous: typeof game.session.phase) {
   version.value++;
+  const current = game.session.phase;
+  if (current === 'countdown') {
+    const second = Math.ceil(game.session.countdownMs / 1000);
+    if (countdownSecond !== second) audio.playEffect('countdownTick');
+    countdownSecond = second;
+  } else {
+    countdownSecond = 0;
+  }
+  const shieldHit = game.defense < previousDefense;
+  previousDefense = game.defense;
+  if (shieldHit && current === 'running') audio.playEffect('shieldDamage');
   if (previous === game.session.phase) return;
   bind();
   if (game.session.phase === 'ended') {
+    audio.stop(true);
+    if (shieldHit) audio.playEffect('shieldDamage');
     void window.typist.setSessionActive(false);
     if (props.visible) void nextTick(() => startButton.value?.focus());
   }
-  if (game.session.phase === 'running') void nextTick(focusInput);
-  if (game.session.phase === 'paused' && props.visible) void nextTick(() => resumeButton.value?.focus());
+  if (game.session.phase === 'running') {
+    if (previous === 'countdown') audio.playEffect('countdownGo');
+    audio.startMusic();
+    void nextTick(focusInput);
+  }
+  if (game.session.phase === 'paused') {
+    audio.stop();
+    if (props.visible) void nextTick(() => resumeButton.value?.focus());
+  }
 }
+const playedImpacts = new WeakSet<(typeof game.attacks)[number]>();
 function update() {
   if (game.session.phase !== 'running' && game.session.phase !== 'countdown') return;
   const previous = game.session.phase;
   game.tick();
+  if (game.session.phase === 'running') {
+    for (const attack of game.attacks) {
+      if (game.usedMs - attack.at < shotFlightMs || playedImpacts.has(attack)) continue;
+      playedImpacts.add(attack);
+      audio.playEffect('enemyHit');
+    }
+  }
   refresh(previous);
 }
 function animate() {
@@ -113,6 +149,7 @@ function finish() {
 function exitGame() {
   if (busy.value) return;
   finish();
+  audio.stop(true);
   preparing.value = true;
   error.value = notice.value = '';
   void nextTick(() => startButton.value?.focus());
@@ -163,6 +200,7 @@ async function start() {
     const registered = await window.typist.setSessionActive(true);
     if (!registered.ok) throw new Error(registered.error.message);
     game.finish();
+    audio.stop(true);
     game.start(items, settings);
     preparing.value = false;
     aim.value = null;
@@ -201,7 +239,12 @@ async function reloadCourse() {
     void nextTick(focusInput);
   }
 }
-watch(() => props.visible, visible => { if (!visible) pause(); });
+watch(() => props.visible, visible => {
+  if (!visible) {
+    pause();
+    audio.stop();
+  }
+});
 onMounted(() => {
   window.addEventListener('keydown', escape, true);
   removePause = window.typist.onPause(pause);
@@ -215,6 +258,7 @@ onMounted(() => {
   void loadSettings();
 });
 onUnmounted(() => {
+  audio.stop(true);
   window.removeEventListener('keydown', escape, true);
   cancelAnimationFrame(animation);
   dispose();
@@ -230,7 +274,6 @@ onUnmounted(() => {
 
     <form v-if="preparing" class="game-overlay briefing" @submit.prevent="start">
       <section class="mission-card">
-        <button type="button" data-page="home" :disabled="busy" @click="emit('home')">← 返回主界面</button>
         <h1>太空打字防御战</h1>
         <p>输入敌机上的五笔编码，守住防线。</p>
         <div class="mission-options">
@@ -239,7 +282,10 @@ onUnmounted(() => {
           <span>难度<strong>标准</strong></span>
         </div>
         <p v-if="error" class="mission-error" role="alert">{{ error }} <button v-if="!ready" type="button" @click="loadSettings">重试</button></p>
-        <button ref="startButton" class="launch" data-game="start" :disabled="busy || !ready">{{ busy ? '准备中…' : '开始游戏 →' }}</button>
+        <div class="mission-actions">
+          <button ref="startButton" class="launch" data-game="start" :disabled="busy || !ready">{{ busy ? '准备中…' : '开始游戏 →' }}</button>
+          <button type="button" data-page="home" :disabled="busy" @click="emit('home')">← 返回主界面</button>
+        </div>
       </section>
     </form>
 
@@ -247,7 +293,7 @@ onUnmounted(() => {
       <header v-if="phase !== 'ended'" class="combat-hud" :inert="phase === 'paused'">
         <div class="hud-brand"><strong>typist<span>.</span></strong><small>太空防御</small></div>
         <div><small>剩余时间</small><b data-game="time">{{ time }}</b></div>
-        <div class="hud-defense"><small>防线耐久</small><b data-game="defense">{{ game.defense }} / 10</b>
+        <div class="hud-defense" :data-condition="game.defense <= 3 ? 'critical' : game.defense <= 6 ? 'damaged' : 'normal'"><small>防线耐久</small><b data-game="defense">{{ game.defense }} / 10</b>
           <span class="defense-meter" aria-hidden="true"><i v-for="point in 10" :key="point" :class="{ spent: point > game.defense }"/></span>
         </div>
         <div><small>连击</small><b class="amber" data-game="combo">{{ game.combo }}</b></div>
@@ -257,10 +303,11 @@ onUnmounted(() => {
 
       <input v-if="phase !== 'ended'" ref="input" class="game-answer" aria-label="游戏编码" :disabled="phase !== 'running' || busy || !!error" autocomplete="off" spellcheck="false" @focus="answerFocused = true" @blur="answerFocused = false">
       <template v-if="phase !== 'ended'">
-        <div class="ammo-hud"><small>穿甲弹</small><div><i v-for="point in ammoLimit" :key="point" :class="{ loaded: point <= game.ammo }"/><b data-game="ammo">{{ game.ammo }} / {{ ammoLimit }}</b></div></div>
-        <div class="input-hud"><small>{{ phase === 'running' && !answerFocused ? '点击战场继续输入' : '当前输入' }}</small>
+        <div class="ammo-hud" role="group" aria-label="穿甲弹库存"><div><i v-for="point in ammoLimit" :key="point" :class="{ loaded: point <= game.ammo }"/><b data-game="ammo">{{ game.ammo }} / {{ ammoLimit }}</b></div></div>
+        <div class="input-hud" :class="{ 'is-focused': phase === 'running' && answerFocused }" role="group" aria-label="当前输入">
           <span data-game="letters" aria-live="off"><i v-for="(letter, index) in (letters || '—')" :key="index">{{ letter }}</i></span>
           <p v-if="notice" role="status">{{ notice }}</p>
+          <p v-else-if="phase === 'running' && !answerFocused">点击战场继续输入</p>
         </div>
       </template>
 

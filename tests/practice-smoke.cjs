@@ -7,9 +7,9 @@ const originalDialog=dialog.showMessageBox;dialog.showMessageBox=async(...args)=
 require('../dist/main/index');
 const wait=(ms=140)=>new Promise(r=>setTimeout(r,ms));async function loaded(win){if(win.webContents.isLoading())await new Promise(r=>win.webContents.once('did-finish-load',r));}
 app.whenReady().then(async()=>{let call;try{
- await wait(800);const main=BrowserWindow.getAllWindows()[0];await loaded(main);call=code=>main.webContents.executeJavaScript(code);
+ await wait(800);const main=BrowserWindow.getAllWindows()[0];await loaded(main);main.focus();await wait();call=code=>main.webContents.executeJavaScript(code);
  const click=selector=>call(`document.querySelector(${JSON.stringify(selector)}).click()`);
- await click('[data-page=practice]');await wait();
+ await click('[data-page=words]');await wait();
  const phase=()=>call(`document.querySelector('[data-testid="phase"]').textContent`);
  const answered=()=>call(`Number((document.querySelector('[data-testid="answered"]')?.textContent??'0').replace(/[^0-9]/g,''))`);
  const current=()=>call(`document.querySelector('[data-current]')?.getAttribute('data-current')`);
@@ -53,6 +53,15 @@ app.whenReady().then(async()=>{let call;try{
  await click('[data-action="start"]');await wait();await call('window.practiceNow=140000');await wait();
  const visibleWords=await call(`Array.from(document.querySelectorAll('[aria-label="本轮题目"] .question-word')).map(e=>e.textContent)`);
  const courseItems=(await call(`window.typist.getCourse({course:'1',offset:0,limit:200})`)).value.items;
+ const doubleClickQuestion=()=>call(`document.querySelector('[data-current] .question-word').dispatchEvent(new MouseEvent('dblclick',{bubbles:true,cancelable:true}))`);
+ const savedWord=await current();
+ await doubleClickQuestion();await wait();
+ assert.ok((await call('window.typist.getSnapshot()')).value.vocabulary.some(p=>p.word===savedWord&&p.code===courseItems.find(i=>i.word===savedWord).codes[0]));
+ assert.equal(await phase(),'练习中');assert.equal(await current(),savedWord);assert.equal(await answered(),0);
+ assert.equal(await call('document.activeElement.id'),'practice-answer');
+ await doubleClickQuestion();await wait();
+ assert.ok((await call('document.querySelector(".practice-body").innerText')).includes('已在生词本中'));
+ checks.push('double-click collects a practice word, reports duplicates and retains the running question and input focus');
  const rapid=visibleWords.slice(0,2).map(w=>courseItems.find(i=>i.word===w).codes[0]).join('');assert.equal(rapid.length,2);
  await call(`(()=>{const el=document.querySelector('#practice-answer');for(const key of ${JSON.stringify(rapid)})el.dispatchEvent(new KeyboardEvent('keydown',{key,bubbles:true}));document.querySelector('[data-action="pause"]').click();})()`);await wait(400);
  assert.equal(await answered(),2);assert.ok((await call('document.querySelector(".practice-panel:not(.game-panel) > .practice-stats").innerText')).includes('正确 2 题'));assert.equal(await phase(),'已暂停');
@@ -65,7 +74,7 @@ app.whenReady().then(async()=>{let call;try{
  checks.push('injected save failure pauses and discards subsequent queued answer without changing committed score');
 
 
- main.webContents.reload();await wait(400);await loaded(main);assert.ok(await call("!!document.querySelector('.home-entries')"));await click('[data-page=practice]');await wait();assert.equal(await phase(),'未开始');assert.equal(await answered(),0);assert.ok((await call('window.typist.getSnapshot()')).value.courseProgress.length>0);assert.ok((await call('window.typist.getSnapshot()')).value.learning.some(l=>l.course==='1'&&l.covered));checks.push('renderer restart restores persistent group but does not restore an active game or score');
+ main.webContents.reload();await wait(400);await loaded(main);assert.ok(await call("!!document.querySelector('.studio-tiles')"));await click('[data-page=words]');await wait();assert.equal(await phase(),'未开始');assert.equal(await answered(),0);assert.ok((await call('window.typist.getSnapshot()')).value.courseProgress.length>0);assert.ok((await call('window.typist.getSnapshot()')).value.learning.some(l=>l.course==='1'&&l.covered));checks.push('renderer restart restores persistent group but does not restore an active game or score');
  console.log(JSON.stringify({platform:process.platform,arch:process.arch,electron:process.versions.electron,checks},null,2));
 }catch(e){console.error(e);if(call)console.error(await call('document.body.innerText'));exitCode=1;}finally{clearTimeout(timeout);dialog.showMessageBox=originalDialog;if(call){try{await call('window.typist.setSessionActive(false)');}catch{}}if(exitCode)app.exit(1);else{setTimeout(()=>app.exit(1),5000).unref();app.quit();}}});
 app.on('quit',()=>{fs.rmSync(dir,{recursive:true,force:true,maxRetries:10,retryDelay:50});process.exit(exitCode);});

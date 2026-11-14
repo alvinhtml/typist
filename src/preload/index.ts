@@ -8,6 +8,7 @@ const bridge:Bridge = {
   setSessionActive:active=>ipcRenderer.invoke('session-active',active),
   getCourse:request=>ipcRenderer.invoke('course',request),
   mutateSupplemental:request=>ipcRenderer.invoke('supplemental',request),
+  addVocabularyWord:request=>ipcRenderer.invoke('add-word',request),
   addVocabularyText:request=>ipcRenderer.invoke('add-text',request),
   deleteVocabulary:request=>ipcRenderer.invoke('delete-vocabulary',request),
   updateSettings:request=>ipcRenderer.invoke('settings',request),

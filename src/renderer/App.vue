@@ -2,13 +2,14 @@
 import ThemeSwitch from './ThemeSwitch.vue';
 import {theme,setTheme,type Theme} from './theme';
 import GamePanel from './GamePanel.vue';
+import {effectsVolume,musicVolume} from './game-audio';
 import PracticePanel from './PracticePanel.vue';
 import VocabularyPanel from './VocabularyPanel.vue';
 import {nextTick,onMounted,onUnmounted,ref} from 'vue';
 import {defaults,type Settings,type CsvKind,type CsvReport,type Course} from '../shared/contracts';
 const pages=[['practice','分级练习'],['vocabulary','生词本'],['text','添加文本'],['game','打字游戏'],['settings','设置中心']];
 const settingsTab=ref('preferences');
-const settingsTabs=[['preferences','练习偏好'],['appearance','界面外观'],['supplemental','补充词库'],['exchange','数据交换']];
+const settingsTabs=[['preferences','练习偏好'],['appearance','界面外观'],['audio','游戏声音'],['supplemental','补充词库'],['exchange','数据交换']];
 const courses:[Course,string][]=[['1','一级简码'],['2','二级简码'],['3','三级简码'],['4','四级简码'],['5','词组'],['vocabulary','生词专项']];
 const compact=location.hash==='#text';
 const page=ref(compact?'text':'home');const error=ref('');const status=ref('');const revision=ref(0);const ready=ref(false);const busy=ref(false);
@@ -53,6 +54,13 @@ onUnmounted(()=>cleanup());
       <section v-if="page==='settings'" v-show="settingsTab==='appearance'" class="card settings-section" aria-labelledby="appearance-heading">
         <div class="settings-section-heading"><h2 id="appearance-heading">界面外观</h2><p>选择适合当前环境的显示方式。</p></div>
         <div class="settings-form appearance-form"><label>颜色模式<select aria-label="设置颜色模式" :value="theme" @change="setTheme(($event.target as HTMLSelectElement).value as Theme)"><option value="system">跟随系统</option><option value="light">浅色</option><option value="dark">深色</option></select></label><p class="note">切换后立即生效。跟随系统时，自动响应系统外观变化。</p></div>
+      </section>
+      <section v-show="settingsTab==='audio'" class="card settings-section" aria-labelledby="audio-heading">
+        <div class="settings-section-heading"><h2 id="audio-heading">游戏声音</h2><p>音量即时生效，调至 0 可静音。</p></div>
+        <div class="settings-form">
+          <label>背景音乐 {{musicVolume}}%<input v-model.number="musicVolume" type="range" min="0" max="100" aria-label="背景音乐音量" :aria-valuetext="`${musicVolume}%`"></label>
+          <label>游戏音效 {{effectsVolume}}%<input v-model.number="effectsVolume" type="range" min="0" max="100" aria-label="游戏音效音量" :aria-valuetext="`${effectsVolume}%`"></label>
+        </div>
       </section>
       <section v-if="page==='settings'" v-show="settingsTab==='preferences'" class="card settings-section" aria-labelledby="preferences-heading">
         <div class="settings-section-heading"><h2 id="preferences-heading">练习偏好</h2><p>统一用于所有课程，保存后从下一局生效。</p></div>

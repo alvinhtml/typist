@@ -4,6 +4,14 @@ const {Store}=require('../dist/main/storage');const {Dictionary,readBuiltin}=req
 const builtins=[{word:'学',code:'i',level:1},{word:'习',code:'nu',level:2},{word:'学习',code:'ipnu',level:5},{word:'学习者',code:'ipnf',level:5},{word:'学',code:'ipb',level:3},{word:'工',code:'a',level:1},{word:'工',code:'a',level:4}];
 function fixture(t,b=builtins){const dir=fs.mkdtempSync(path.join(os.tmpdir(),'typist-business-'));let store=new Store(path.join(dir,'data.sqlite'),b);t.after(()=>{store.close();fs.rmSync(dir,{recursive:true,force:true});});let id=0;return {get s(){return store},reopen(){store.close();store=new Store(path.join(dir,'data.sqlite'),b)},req(value){return {requestId:`req-${++id}`,expectedRevision:store.revision,value}}};}
 function value(out){assert.equal(out.result.ok,true);return out.result.value;}
+test('practice additions match the full word and retain every code',t=>{
+ const {s,req}=fixture(t,[...builtins,{word:'。',code:'zz',level:2}]);
+ assert.equal(value(s.addVocabularyText(req('。'))).addedPairs.length,0);
+ assert.deepEqual(value(s.addVocabularyText(req('。'),true)).addedPairs.map(p=>({...p})),[{word:'。',code:'zz'}]);
+ assert.equal(value(s.addVocabularyText(req('学'),true)).addedPairs.length,2);
+ assert.equal(value(s.addVocabularyText(req('学'),true)).duplicateOccurrences,2);
+ assert.deepEqual(value(s.addVocabularyText(req('学习学习'),true)).unknownDistinct,['学习学习']);
+});
 test('longest phrases, no internal singles, separators, unknown distinct and all codes',()=>{
  const d=new Dictionary(builtins,[]);assert.deepEqual(d.match('学习者学习，学\n习🚀🚀A1'),{pairs:[{word:'学习者',code:'ipnf'},{word:'学习',code:'ipnu'},{word:'学',code:'i'},{word:'学',code:'ipb'},{word:'习',code:'nu'}],unknownDistinct:['🚀','A','1']});
  assert.equal(d.pairs.get(JSON.stringify(['工','a'])).levels.size,2);assert.equal(d.page('4',0,10).items[0].word,'工');assert.equal(d.match('学，习').pairs.some(p=>p.word==='学习'),false);

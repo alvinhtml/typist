@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="40" viewBox="0 0 64 40">
+  <defs>
+    <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0e2033"/>
+      <stop offset="1" stop-color="#060e18"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#77e7ff" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#77e7ff" stop-opacity=".85"/>
+      <stop offset="1" stop-color="#77e7ff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation=".9" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <path d="M9 1 H55 L63 9 V31 L55 39 H9 L1 31 V9 Z" fill="url(#fill)" stroke="#2c5671" stroke-width="1.2"/>
+  <path d="M10 3 H54 L61 10 V30 L54 37 H10 L3 30 V10 Z" fill="none" stroke="#77e7ff" stroke-opacity=".45" stroke-width=".8" filter="url(#glow)"/>
+  <rect x="10" y="3.5" width="44" height="1.6" fill="url(#edge)" opacity=".7"/>
+  <path d="M12 35 H52" stroke="#16303f" stroke-width="1"/>
+</svg>

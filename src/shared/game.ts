@@ -8,9 +8,11 @@ export const enemyTypes = {
   reward: { hp: 1, speed: 0.115, points: 150, damage: 0 },
 } as const;
 
-export const laneCount = 4;
+const openingTargetCount = 6;
+const openingSpacingMs = 500;
+const refillTargetCount = 3;
 export const ammoLimit = 3;
-const spawnInterval = 2400;
+export const shotFlightMs = 145;
 
 type EnemyType = keyof typeof enemyTypes;
 export type Target = {
@@ -18,7 +20,7 @@ export type Target = {
   word: string;
   codes: string[];
   kind: EnemyType;
-  lane: number;
+  x: number;
   hp: number;
   bornAt: number;
   y: number;
@@ -50,7 +52,6 @@ export class Game {
   outcome: 'time' | 'breach' | 'manual' | 'empty' | null = null;
   private items: CourseWord[] = [];
   private sequence = 0;
-  private nextSpawn = 0;
   private elapsed = 0;
 
   constructor(clock: () => number = () => performance.now(), private random: () => number = Math.random) {
@@ -69,17 +70,14 @@ export class Game {
     this.correct = this.characters = this.mistakes = this.hits = this.score = this.combo = this.ammo = 0;
     this.bestCombo = this.piercingUsed = 0;
     this.defense = 10;
-    this.elapsed = this.nextSpawn = this.sequence = 0;
+    this.elapsed = this.sequence = 0;
     this.outcome = null;
   }
 
   private spawn(at: number) {
-    const lane = Array.from({length: laneCount}, (_, index) => (index + this.sequence) % laneCount)
-      .find(index => !this.targets.some(target => target.lane === index));
-    if (lane === undefined) return;
     const activeWords = new Set(this.targets.map(target => target.word));
     const available = this.items.filter(item => !activeWords.has(item.word));
-    if (!available.length) return;
+    if (!available.length) return false;
     const item = available[Math.floor(this.random() * available.length)];
     const roll = this.random();
     let kind: EnemyType = 'scout';
@@ -87,9 +85,33 @@ export class Game {
     else if (at >= 14400 && roll >= 0.70) kind = 'heavy';
     else if (at >= 4800 && roll >= 0.48) kind = 'armored';
     this.targets.push({
-      id: ++this.sequence, word: item.word, codes: [...item.codes], lane, kind,
+      id: ++this.sequence, word: item.word, codes: [...item.codes], x: this.spawnX(at), kind,
       hp: enemyTypes[kind].hp, bornAt: at, y: 0,
     });
+    return true;
+  }
+
+  private spawnX(at: number) {
+    // Prefer space between enemies still close to the top of the field.
+    const nearby = this.targets.filter(target => (at - target.bornAt) * enemyTypes[target.kind].speed < 200);
+    const offset = this.random();
+    if (!nearby.length) return 0.10 + 0.80 * offset;
+    let best = 0, bestClearance = -1;
+    for (let index = 0; index < 12; index++) {
+      const x = 0.10 + 0.80 * (index + offset) / 12;
+      const clearance = Math.min(...nearby.map(target => Math.abs(target.x - x)));
+      if (clearance > bestClearance) {
+        best = x;
+        bestClearance = clearance;
+      }
+    }
+    return best;
+  }
+
+  private fill(at: number) {
+    while (this.targets.length < refillTargetCount && this.spawn(at)) {
+      // A small course may run out of distinct words before the target count.
+    }
   }
 
   tick() {
@@ -98,28 +120,30 @@ export class Game {
     if (this.session.phase === 'countdown') return;
     const duration = this.session.settingsSnapshot!.duration * 60000;
     const until = duration - this.session.remainingMs;
-    // Process scheduled events in order, even when a renderer tick arrives late.
+    if (!this.sequence) {
+      const count = Math.min(openingTargetCount, this.items.length);
+      // Start the leading ships farther along their flight paths.
+      for (let index = count - 1; index >= 0; index--) this.spawn(-index * openingSpacingMs);
+    }
+    else if (this.session.phase === 'running') this.fill(this.elapsed);
+
+    // Settle breaches in chronological order, including refills after each group.
     while (true) {
-      const nextBreach = Math.min(...this.targets.map(target => this.arrival(target)));
-      const at = Math.min(this.nextSpawn, nextBreach);
+      const at = Math.min(...this.targets.map(target => this.arrival(target)));
       if (at > until || at >= duration) break;
-      if (nextBreach <= this.nextSpawn) {
-        const arrived = this.targets.filter(target => this.arrival(target) === at);
-        for (const target of arrived) {
-          this.defense = Math.max(0, this.defense - enemyTypes[target.kind].damage);
-          this.breaches.push({target, at});
-        }
-        this.targets = this.targets.filter(target => !arrived.includes(target));
-        if (this.defense === 0) {
-          this.elapsed = at;
-          this.session.remainingMs = duration - at;
-          this.end('breach');
-          break;
-        }
-      } else {
-        this.spawn(at);
-        this.nextSpawn += spawnInterval;
+      const arrived = this.targets.filter(target => this.arrival(target) === at);
+      for (const target of arrived) {
+        this.defense = Math.max(0, this.defense - enemyTypes[target.kind].damage);
+        this.breaches.push({target, at});
       }
+      this.targets = this.targets.filter(target => !arrived.includes(target));
+      if (this.defense === 0) {
+        this.elapsed = at;
+        this.session.remainingMs = duration - at;
+        this.end('breach');
+        break;
+      }
+      this.fill(at);
     }
     if (!this.outcome) {
       this.elapsed = until;
@@ -174,6 +198,7 @@ export class Game {
     }
     const attack = {target: {...target}, at: this.elapsed, piercing, destroyed, stockFull};
     this.attacks.push(attack);
+    if (destroyed) this.fill(this.elapsed);
     return attack;
   }
 
@@ -184,6 +209,7 @@ export class Game {
     this.targets = this.targets.filter(target => byWord.has(target.word));
     for (const target of this.targets) target.codes = [...byWord.get(target.word)!];
     if (this.session.active && !items.length) this.end('empty');
+    else if (this.session.phase === 'running') this.fill(this.elapsed);
   }
 
   statistics() {

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <defs>
+    <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0e2033"/>
+      <stop offset=".55" stop-color="#0a1826"/>
+      <stop offset="1" stop-color="#060e18"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#77e7ff" stop-opacity="0"/>
+      <stop offset=".5" stop-color="#77e7ff" stop-opacity=".9"/>
+      <stop offset="1" stop-color="#77e7ff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.1" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <path d="M16 1 H80 L95 16 V80 L80 95 H16 L1 80 V16 Z" fill="url(#fill)" stroke="#2c5671" stroke-width="1.4"/>
+  <path d="M17.5 3.5 H78.5 L92.5 17.5 V78.5 L78.5 92.5 H17.5 L3.5 78.5 V17.5 Z" fill="none" stroke="#77e7ff" stroke-opacity=".5" stroke-width="1" filter="url(#glow)"/>
+  <rect x="22" y="5" width="52" height="2" fill="url(#edge)" opacity=".8"/>
+  <g fill="#3d6a86">
+    <circle cx="7.5" cy="7.5" r="1.5"/><circle cx="88.5" cy="7.5" r="1.5"/>
+    <circle cx="7.5" cy="88.5" r="1.5"/><circle cx="88.5" cy="88.5" r="1.5"/>
+  </g>
+  <path d="M20 32 H76 M20 64 H76" stroke="#16303f" stroke-width="1" opacity=".8"/>
+</svg>

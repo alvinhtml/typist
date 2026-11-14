@@ -81,6 +81,7 @@ function register() {
     learning:request=>{if(!store)throw startupError;const {result,committed}=store.saveLearning(request);if(committed&&result.ok){const event:Changed={revision:result.revision,requestId:request.requestId,affectedCourses:[],addedPairs:[],removedPairs:[],codeReplacements:[],removedCourseWords:[]};for(const win of BrowserWindow.getAllWindows())win.webContents.send('changed',event);}return result;},
     course:request=>{if(!store)throw startupError;return store.getCourse(request);},
     supplemental:request=>{if(!store)throw startupError;return business(request,()=>store!.mutateSupplemental(request));},
+    'add-word':request=>{if(!store)throw startupError;return business(request,()=>store!.addVocabularyText(request,true));},
     'add-text':request=>{if(!store)throw startupError;return business(request,()=>store!.addVocabularyText(request));},
     'delete-vocabulary':request=>{if(!store)throw startupError;return business(request,()=>store!.deleteVocabulary(request));},
     resources:()=>({ok:true,revision:store?.revision??0,value:[1,2,3,4,5].map(level=>({level,bytes:readFileSync(join(app.isPackaged?process.resourcesPath:app.getAppPath(),'data',`level${level}.csv`)).length}))}),

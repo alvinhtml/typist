@@ -105,10 +105,16 @@ export class Store {
     for(const p of before.vocabulary){let code=p.code;for(const r of replacements)if(r.word===p.word&&r.oldCode===code)code=r.newCode;if(code!==p.code&&newPairs.has(pairKey({word:p.word,code})))finalReplacements.push({word:p.word,oldCode:p.code,newCode:code});}
     return {addedPairs:after.vocabulary.filter(p=>!oldPairs.has(pairKey(p))),removedPairs:before.vocabulary.filter(p=>!newPairs.has(pairKey(p))),codeReplacements:finalReplacements,removedCourseWords,affectedCourses};
   }
-  addVocabularyText(request:Write<string>){
+  addVocabularyText(request:Write<string>,exactWord=false){
     if(!request||typeof request.value!=='string'||!request.value.trim()||request.value.length>100000)throw new StoreError('VALIDATION','请输入文本，单次最多100000个字符。');
-    return this.write<TextAddition>('text',request,()=>{
-      const before=this.snapshotValue(),match=this.index.match(request.value);let duplicateOccurrences=0;
+    return this.write<TextAddition>(exactWord?'word':'text',request,()=>{
+      const before=this.snapshotValue();
+      const word=request.value;
+      const codes=exactWord?this.index.byWord.get(word):undefined;
+      const match=exactWord
+        ? {pairs:Array.from(codes??[],code=>({word,code})),unknownDistinct:codes?[]:[word]}
+        : this.index.match(word);
+      let duplicateOccurrences=0;
       const insert=this.db.prepare('INSERT OR IGNORE INTO vocabulary VALUES(?,?)');
       for(const p of match.pairs)if(!insert.run(p.word,p.code).changes)duplicateOccurrences++;
       return {...this.reconcile(before,[]),duplicateOccurrences,unknownDistinct:match.unknownDistinct};

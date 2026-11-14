@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /// <reference types="vite/client" />
 import { computed, onMounted } from 'vue';
-import { enemyTypes, laneCount, type Game, type Target } from '../shared/game';
+import { enemyTypes, shotFlightMs, type Game, type Target } from '../shared/game';
 import background from '../assets/game/scene/background/orbital-nebula-v2.png';
 import foreground from '../assets/game/scene/foreground/asteroids-v2.png';
 import shield from '../assets/game/scene/shield/arc-v2.png';
@@ -19,17 +19,15 @@ onMounted(() => {
   for (const url of [foreground, shield, ripple, explosion, effects, player, ...Object.values(enemies)]) new Image().src = url;
 });
 
-// Flatten the painted arc so all four lanes still reach nearly the same height.
-// The y=1 anchor follows the arc at the center of each lane.
-const x = (lane: number) => (lane + .5) / laneCount * 100;
-const rim = (lane: number) => [18, 2, 2, 18][lane];
+// Follow the shield arc across the full width of the battlefield.
+const rim = (x: number) => 28 * (2 * x - 1) ** 2;
 const position = (target: Target) => ({
-  left: `${x(target.lane)}%`,
-  top: `calc(${target.y * 100}% + ${rim(target.lane) * target.y}px)`,
+  left: `${target.x * 100}%`,
+  top: `calc(${target.y * 100}% + ${rim(target.x) * target.y}px)`,
 });
 const aimStyle = (target: Target) => ({
-  '--dx': `${x(target.lane) - 50}cqw`,
-  '--dy': `calc(${(1 - target.y) * 100}cqh + var(--player-offset) - ${rim(target.lane) * target.y}px)`,
+  '--dx': `${target.x * 100 - 50}cqw`,
+  '--dy': `calc(${(1 - target.y) * 100}cqh + var(--player-offset) - ${rim(target.x) * target.y}px)`,
 });
 function atlas(url: string, index: number) {
   return { backgroundImage: texture(url), backgroundPosition: `${(index % 4) * 100 / 3}% ${index < 4 ? 0 : 100}%` };
@@ -46,9 +44,8 @@ const scene = computed(() => {
   const shots = game.attacks.map(attack => {
     const age = now - attack.at;
     const target = game.targets.find(item => item.id === attack.target.id) ?? attack.target;
-    const flight = 145;
-    const progress = Math.min(1, age / flight);
-    const impact = age - flight;
+    const progress = Math.min(1, age / shotFlightMs);
+    const impact = age - shotFlightMs;
     const large = enemyTypes[target.kind].hp > 1;
     const frameMs = large ? 59 : 46;
     const frame = Math.floor(impact / frameMs);
@@ -65,8 +62,8 @@ const scene = computed(() => {
       art: impact < 0 ? atlas(effects, attack.piercing ? 1 : 0)
         : attack.destroyed ? atlas(explosion, Math.min(7, frame)) : atlas(effects, 3),
       style: {
-        left: `${50 + (x(target.lane) - 50) * progress}%`,
-        top: `calc(${100 - (1 - target.y) * 100 * progress}% + var(--player-offset) * ${1 - progress} + ${rim(target.lane) * target.y * progress}px - var(--muzzle-offset) * ${1 - progress})`,
+        left: `${50 + (target.x * 100 - 50) * progress}%`,
+        top: `calc(${100 - (1 - target.y) * 100 * progress}% + var(--player-offset) * ${1 - progress} + ${rim(target.x) * target.y * progress}px - var(--muzzle-offset) * ${1 - progress})`,
         ...aimStyle(target),
       },
     };

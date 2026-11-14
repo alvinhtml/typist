@@ -50,6 +50,28 @@ function pause(){updateClock();if(!session.active)return;session.pause();phase.v
 function resume(){if(loading.value||error.value||!props.visible)return;session.resume();phase.value=session.phase;invalidate();void nextTick(()=>input.value?.focus());}
 function finish(){updateClock();if(session.phase!=='ended')session.end();phase.value='ended';invalidate();void window.typist.setSessionActive(false);}
 function enqueue(task:()=>Promise<void>){queue=queue.then(task).catch(e=>{error.value=e instanceof Error?e.message:'练习操作失败。';pause();});return queue;}
+function addPracticeWord(word:string){
+  void enqueue(async()=>{
+    const requestId=crypto.randomUUID();
+    ownRequests.add(requestId);
+    try{
+      const add=()=>window.typist.addVocabularyWord({requestId,expectedRevision:revision.value,value:word});
+      let result=await add();
+      if(!result.ok&&result.error.code==='CONFLICT'){
+        await snapshot();
+        result=await add();
+      }
+      if(!result.ok)throw new Error(result.error.message);
+      revision.value=result.revision;
+      if(result.value.addedPairs.length)notice.value=`「${word}」已加入生词本。`;
+      else if(result.value.duplicateOccurrences)notice.value=`「${word}」已在生词本中。`;
+      else notice.value=`「${word}」已无法在词库中识别。`;
+      if(result.value.affectedCourses.includes(course.value))await refreshSource();
+    }catch(e){
+      notice.value=e instanceof Error?e.message:'加入生词本失败，请重试。';
+    }finally{ownRequests.delete(requestId);}
+  });
+}
 async function snapshot(){const r=await window.typist.getSnapshot();if(!r.ok)throw new Error(r.error.message);revision.value=r.revision;return r.value;}
 async function data():Promise<{snapshot:Snapshot;items:CourseWord[]}>{
   const state=await snapshot(),readRevision=revision.value,items:CourseWord[]=[];let total=1;
@@ -131,7 +153,7 @@ onUnmounted(()=>{mounted=false;clearInterval(timer);resize?.disconnect();dispose
     <div v-if="phase==='countdown'" class="countdown" aria-live="polite"><strong>{{Math.ceil(countdown/1000)}}</strong><p>切换至英文状态，双手放在键盘上</p></div>
     <div v-if="model&&phase!=='ended'" ref="grid" class="practice-grid" aria-label="本轮题目" :class="{paused:phase==='paused'||phase==='countdown'}">
       <div v-for="{word,index:i,width} in visibleQuestions" :key="word" class="question-cell" :style="{width:`${width}px`}" :class="{current:i===model.position,future:i>model.position}" :data-current="i===model.position?word:undefined">
-        <strong class="question-word">{{word}}</strong>
+        <strong class="question-word" title="双击加入生词本" @mousedown.left.prevent @dblclick.prevent="addPracticeWord(word)">{{word}}</strong>
         <small class="answer-code" v-if="model.feedback[i]&&!model.feedback[i].correct">{{model.items.get(word)?.join(' · ')}}</small><small v-else class="answer-code">&nbsp;</small>
         <span v-if="i===model.position&&active" class="input-slot" aria-hidden="true"></span>
         <span v-else class="answer-feedback" :class="model.feedback[i]?.correct?'correct':'incorrect'">{{model.feedback[i]?.answer||'\u00a0'}}</span>
@@ -142,7 +164,7 @@ onUnmounted(()=>{mounted=false;clearInterval(timer);resize?.disconnect();dispose
     <div v-if="phase==='paused'" class="pause-message"><p>题目与进度已保留，继续后可直接输入。</p><button class="primary" :disabled="!!error||loading||saving||!!pending" @click="resume">继续练习 →</button></div>
     <div v-if="phase==='ended'" class="empty-state"><h1>每一次，都更熟悉一点。</h1><p>本次练习已结束，学习进度已保留。</p><button class="primary" data-action="start" :disabled="loading||saving" @click="start">再练一次 →</button></div>
     <p v-if="saving" class="note" role="status">正在保存学习进度…</p>
-    <details v-if="model?.previousFeedback.length" class="previous-round"><summary>上一轮作答</summary><div class="practice-grid"><div v-for="(f,i) in model.previousFeedback" :key="i" class="question-cell"><strong class="question-word">{{f.word}}</strong><small class="answer-code">{{f.correct?'\u00a0':f.codes.join(' · ')}}</small><span class="answer-feedback" :class="f.correct?'correct':'incorrect'">{{f.answer||'\u00a0'}}</span></div></div></details>
+    <details v-if="model?.previousFeedback.length" class="previous-round"><summary>上一轮作答</summary><div class="practice-grid"><div v-for="(f,i) in model.previousFeedback" :key="i" class="question-cell"><strong class="question-word" title="双击加入生词本" @mousedown.left.prevent @dblclick.prevent="addPracticeWord(f.word)">{{f.word}}</strong><small class="answer-code">{{f.correct?'\u00a0':f.codes.join(' · ')}}</small><span class="answer-feedback" :class="f.correct?'correct':'incorrect'">{{f.answer||'\u00a0'}}</span></div></div></details>
   </main>
   <section class="practice-stats" :aria-label="phase==='ended'?'本次成绩':'本次统计'">
     <div class="stat"><small>速度</small><strong>{{stats?.speed.toFixed(1)??'0.0'}}</strong><span> 字/分钟</span></div>

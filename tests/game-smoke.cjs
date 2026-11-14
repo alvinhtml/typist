@@ -59,6 +59,17 @@ app.whenReady().then(async () => {
 
     await click('.studio-header [data-page=settings]');
     assert.equal(await call('document.querySelector(".settings-page").innerText.includes("游戏难度")'), false);
+    await call('[...document.querySelectorAll(".settings-tabs button")].find(button => button.textContent === "游戏声音").click()');
+    const adjustVolume = (label, volume) => call(`(() => {
+      const slider = document.querySelector('[aria-label="${label}"]');
+      slider.value = ${volume};
+      slider.dispatchEvent(new Event('input', { bubbles: true }));
+      return slider.valueAsNumber;
+    })()`);
+    assert.equal(await adjustVolume('背景音乐音量', 25), 25);
+    assert.equal(await adjustVolume('游戏音效音量', 0), 0);
+    assert.deepEqual(await call('[localStorage.getItem("typist.audio.music"), localStorage.getItem("typist.audio.effects")]'), ['25', '0']);
+    await adjustVolume('游戏音效音量', 65);
     await click('.studio-logo');
     await click('[data-page=game]');
     assert.equal(await call('!!document.querySelector("[aria-label=游戏难度]")'), false);
@@ -105,11 +116,18 @@ app.whenReady().then(async () => {
     assert.equal(await read('[data-game=defense]'), '10 / 10');
     assert.equal((await snapshot()).settings.duration, 2);
     assert.equal(await call('document.querySelector(".game-panel").innerText.includes("准确率")'), false);
+    assert.equal(await call('document.querySelectorAll(".game-target").length'), 6);
     await capture('default');
     assert.ok(await fullViewport(), JSON.stringify(await call(`[innerWidth,innerHeight,document.documentElement.scrollWidth,...['.game-arena','.combat-hud','.player','.player .exhaust','.enemy-ship'].map(s=>document.querySelector(s)?.getBoundingClientRect().toJSON())]`)));
     assert.ok(await call('[".player-ship",".enemy-ship",".defense-line",".asteroids"].every(s => document.querySelector(s).naturalWidth > 0)'));
 
     await ensureRunning();
+    await call(`(() => {
+      const input = document.activeElement;
+      input.dispatchEvent(new CompositionEvent('compositionstart', {bubbles:true}));
+      input.dispatchEvent(new KeyboardEvent('keydown', {key:'a', isComposing:true, bubbles:true}));
+    })()`);
+    assert.equal(await read('[data-game=letters]'), '—');
     await keys('ab');
     assert.equal(await read('[data-game=letters]'), 'ab');
     key('Escape');
@@ -145,6 +163,7 @@ app.whenReady().then(async () => {
     assert.equal(await read('[data-game=score]'), '0');
     await keys(code.length === 4 ? code : code + ' ');
     assert.equal(await read('[data-game=score]'), '100');
+    assert.equal(await call('document.querySelectorAll(".game-target").length'), 5);
     assert.equal(await read('[data-game=combo]'), '1');
     assert.ok(await call('!!document.querySelector(".shot.bullet,.muzzle")'));
     await clock(13295);

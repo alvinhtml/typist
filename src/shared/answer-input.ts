@@ -2,22 +2,23 @@ import type {Course} from './contracts';
 
 /** Local, synchronous code buffer. Text input/composition never submits answers. */
 export function bindAnswerInput(element:HTMLInputElement,accept:(code:string|null)=>void,enabled:()=>boolean,notice:()=>void,course:()=>Course=()=> 'vocabulary'){
-  let buffer='',composing=false,disposed=false;
+  let buffer='',disposed=false;
   const handlers=new Map<string,EventListener>();
   function on(type:string,handler:EventListener){handlers.set(type,handler);element.addEventListener(type,handler);}
   const clear=()=>{buffer='';element.value='';};
   const blocked=(event:Event)=>{event.preventDefault();element.value=buffer;notice();};
   on('paste',blocked);on('drop',blocked);
   on('beforeinput',event=>{event.preventDefault();if(/paste|drop/i.test((event as InputEvent).inputType))notice();});
-  on('compositionstart',()=>{composing=true;clear();notice();});
-  on('compositionend',()=>{composing=false;clear();});
+  on('compositionstart',()=>{clear();notice();});
+  on('compositionend',clear);
   on('input',event=>{if(/paste|drop/i.test((event as InputEvent).inputType))notice();element.value=buffer;});
   on('blur',clear);
   on('keydown',event=>{
     const e=event as KeyboardEvent;
     if(disposed||!enabled()){clear();return;}
     if(e.ctrlKey||e.metaKey||e.altKey)return;
-    if(composing||e.isComposing||e.keyCode===229){clear();notice();return;}
+    // An input-source switch can leave compositionstart without compositionend.
+    if(e.isComposing||e.keyCode===229||e.key==='Process'){clear();notice();return;}
     if(e.key==='Tab'||e.key==='Escape'||e.key.startsWith('Arrow'))return;
     e.preventDefault();if(e.repeat)return;
     if(e.key==='Backspace'){buffer=buffer.slice(0,-1);element.value=buffer;return;}

@@ -12,96 +12,81 @@ const items = [
 function setup(words = items, rolls = []) {
   let now = 0;
   let calls = 0;
-  const game = new Game(() => now, () => calls++ % 2 === 0 ? 0 : rolls.shift() ?? 0);
+  const game = new Game(() => now, () => calls++ % 3 === 1 ? rolls.shift() ?? 0 : 0);
   game.start(words, {...defaults, duration: 1});
   return {game, advance(ms) { now += ms; game.tick(); }};
 }
 
-test('paced unique targets, free selection, nearest same code and creation-order ties', () => {
-  const {game, advance} = setup();
+test('six unique opening targets, no timed spawns, and immediate refill below three', () => {
+  const extra = ['五', '六', '七'].map((word, index) => ({word, codes: [String(index)]}));
+  const {game, advance} = setup([...items, ...extra]);
   advance(2999);
   assert.equal(game.targets.length, 0);
   advance(1);
-  assert.equal(game.targets.length, 1);
-  advance(2400);
-  assert.deepEqual(game.targets.map(t => t.word), ['一', '学习']);
-  assert.ok(game.targets[0].y > game.targets[1].y);
-  assert.equal(game.answer('g').target.word, '一');
-  assert.equal(game.answer('abcd').target.word, '学习');
-  assert.equal(game.answer('g'), false, 'exploding targets cannot match');
-  assert.equal(game.answer(null), null);
-  assert.equal(game.statistics().accuracy, 2 / 3);
-  assert.equal(game.characters, 3);
-  assert.equal(game.combo, 0);
-  assert.equal(game.bestCombo, 2);
-
+  assert.equal(game.targets.length, 6);
+  assert.equal(new Set(game.targets.map(t => t.word)).size, 6);
+  assert.equal(new Set(game.targets.map(t => t.x)).size, 6);
+  assert.ok(game.targets.every(t => t.x >= .1 && t.x <= .9));
+  assert.ok(game.targets.every((target, index, wave) => index === 0 || target.y < wave[index - 1].y));
   advance(4800);
-  // Match a pair at the same simulated distance.
-  game.targets[1].bornAt = game.targets[0].bornAt;
-  const oldest = game.targets[0].id;
-  assert.equal(game.answer('g').target.id, oldest);
+  assert.equal(game.targets.length, 6);
+  assert.equal(game.answer('g').target.word, '一', 'closest to the defense wins');
+  assert.equal(game.answer('g').target.word, '学习');
+  assert.equal(game.answer('g'), false, 'destroyed words do not match before refill');
+  game.answer('d');
+  assert.equal(game.targets.length, 3);
+  game.answer('l');
+  assert.equal(game.targets.length, 3);
+  assert.ok(game.targets.some(target => target.bornAt === game.usedMs));
+  assert.equal(game.characters, 5);
+  assert.equal(game.statistics().accuracy, 4 / 5);
 });
 
-test('ordinary damage is immediate and piercing only spends ammo on multiple remaining HP', () => {
-  const {game, advance} = setup(items, [0, 0, 0.6, 0.95, 0.6, 0, 0.75]);
-  advance(5400);
-  assert.equal(game.answer('gggg').destroyed, true);
-  assert.equal(game.answer('abcd').destroyed, true);
-  advance(2400);
-  const hit = game.answer('gggg');
+test('ordinary damage and piercing update HP, score and inventory immediately', () => {
+  const {game, advance} = setup([items[0]], [0, 0.6, 0.95, 0.75]);
+  advance(15000);
+  assert.equal(game.answer('g').destroyed, true);
+  const hit = game.answer('g');
   assert.equal(hit.target.kind, 'armored');
   assert.equal(hit.target.hp, 1);
   assert.equal(hit.destroyed, false);
-  assert.equal(game.score, 200);
   advance(2400);
-  assert.equal(game.answer('abcd').target.kind, 'reward');
+  assert.equal(game.answer('g').piercing, false);
+  assert.equal(game.answer('g').target.kind, 'reward');
   assert.equal(game.ammo, 1);
-  assert.equal(game.answer('gggg').piercing, false);
-  assert.equal(game.ammo, 1);
-  advance(2400);
-  const piercing = game.answer('gggg');
+  const piercing = game.answer('g');
+  assert.equal(piercing.target.kind, 'heavy');
   assert.equal(piercing.piercing, true);
   assert.equal(piercing.destroyed, true);
   assert.equal(game.ammo, 0);
   assert.equal(game.piercingUsed, 1);
-  advance(4800);
-  const heavy = game.targets.find(t => t.kind === 'heavy');
-  assert.ok(heavy);
-  for (const hp of [2, 1, 0]) assert.equal(game.answer(heavy.codes.at(-1)).target.hp, hp);
-  assert.equal(game.score, 1050);
-  assert.equal(game.correct, 6);
-  assert.equal(game.combo, 9);
-  assert.equal(game.statistics().accuracy, 1);
+  assert.equal(game.score, 750);
+  assert.equal(game.correct, 4);
+  assert.equal(game.combo, 5);
 });
 
 test('reward scores once, caps stock and reports full inventory', () => {
-  const {game, advance} = setup([items[0]], [0, 0, 0.95, 0.95, 0.95, 0.95]);
-  advance(3000);
-  game.answer('g');
-  advance(2400);
+  const {game, advance} = setup([items[0]], Array(5).fill(0.95));
+  advance(7800);
   game.answer('g');
   for (let index = 1; index <= 4; index++) {
-    advance(2400);
     assert.equal(game.answer('g').stockFull, index > ammoLimit);
     assert.equal(game.ammo, Math.min(ammoLimit, index));
-    assert.equal(game.answer('g'), false);
   }
-  assert.equal(game.score, 800);
+  assert.equal(game.score, 700);
 });
 
 test('reward escape is harmless and damaged enemies breach for their original HP', () => {
-  const {game, advance} = setup(items, [0, 0, 0.6, 0.95]);
-  advance(5400);
-  game.answer('gggg');
-  game.answer('abcd');
-  advance(2400);
-  assert.equal(game.answer('gggg').target.hp, 1);
-  advance(11100);
+  const {game, advance} = setup([items[0]], [0, 0.95, 0.6]);
+  advance(7800);
+  game.answer('g');
+  advance(8700);
   assert.equal(game.defense, 10);
   assert.equal(game.breaches[0].target.kind, 'reward');
-  advance(6000);
+  assert.equal(game.answer('g').target.hp, 1);
+  advance(16670);
   assert.equal(game.defense, 8);
-  assert.equal(game.correct, 2);
+  assert.equal(game.correct, 1);
 });
 
 test('late tick settles at the first depleted-defense event or the time limit', () => {
@@ -150,7 +135,7 @@ test('pause freezes movement, spawn, effects and time; sync updates codes and re
   assert.equal(game.ammo, 0);
   assert.equal(game.defense, 10);
   advance(3000);
-  assert.equal(game.targets.length, 1);
+  assert.equal(game.targets.length, 4);
   assert.equal(game.targets[0].hp, enemyTypes.scout.hp);
   game.finish();
   assert.equal(game.outcome, 'manual');

@@ -19,6 +19,7 @@ export interface Bridge {
   setSessionActive(active:boolean):Promise<Result<null>>;
   getCourse(request:{course:Course;offset:number;limit:number}):Promise<Result<{total:number;items:CourseWord[]}>>;
   mutateSupplemental(request:Write<SupplementalOperation[]>):Promise<Result<SupplementalChange>>;
+  addVocabularyWord(request:Write<string>):Promise<Result<TextAddition>>;
   addVocabularyText(request:Write<string>):Promise<Result<TextAddition>>;
   deleteVocabulary(request:Write<VocabularySelection>):Promise<Result<VocabularyChange>>;
   updateSettings(request:Write<Settings>):Promise<Result<Settings>>;
